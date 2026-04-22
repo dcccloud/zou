@@ -1,12 +1,40 @@
 import os
 import flask_fs
 
+import boto3
 from flask import current_app
 from werkzeug.utils import cached_property
 
 from zou.app import config
 
 from flask_fs.backends.local import LocalBackend
+from flask_fs.backends.s3 import S3Backend
+
+_original_s3_init = S3Backend.__init__
+
+
+def _s3_init_virtual_host(self, name, cfg):
+    """Patch S3Backend to use virtual-hosted-style addressing (required by
+    Alibaba Cloud OSS and recommended by AWS)."""
+    super(S3Backend, self).__init__(name, cfg)
+
+    self.session = boto3.session.Session()
+    self.s3config = boto3.session.Config(
+        signature_version="s3v4",
+        s3={"addressing_style": "virtual"},
+    )
+    self.s3 = self.session.resource(
+        "s3",
+        config=self.s3config,
+        endpoint_url=cfg.endpoint,
+        region_name=cfg.region,
+        aws_access_key_id=cfg.access_key,
+        aws_secret_access_key=cfg.secret_key,
+    )
+    self.bucket = self.s3.Bucket(name)
+
+
+S3Backend.__init__ = _s3_init_virtual_host
 
 pictures = None
 movies = None

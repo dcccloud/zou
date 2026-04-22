@@ -6,6 +6,7 @@ from zou.app.blueprints.previews.resources import (
     AddTasksBatchCommentResource,
     AttachmentThumbnailResource,
     CreatePreviewFilePictureResource,
+    CreatePreviewFileFromUrlResource,
     PreviewFileLowMovieResource,
     PreviewFileMovieResource,
     PreviewFileMovieDownloadResource,
@@ -38,6 +39,10 @@ routes = [
     (
         "/pictures/preview-files/<instance_id>",
         CreatePreviewFilePictureResource,
+    ),
+    (
+        "/pictures/preview-files/<instance_id>/from-url",
+        CreatePreviewFileFromUrlResource,
     ),
     (
         "/actions/tasks/<task_id>/batch-comment",

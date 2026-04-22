@@ -317,6 +317,33 @@ def _init_task_types_for_domain(domain):
             concept, "Concept", "#8D6E63", 1, for_entity="Concept"
         )
 
+    # Sequence task types (shared across all domains)
+    ai_dept = tasks_service.get_or_create_department("AI", "#9b59b6")
+    tasks_service.get_or_create_task_type(
+        ai_dept,
+        "seq_video_prompt",
+        "#8e44ad",
+        priority=1,
+        for_entity="Sequence",
+        short_name="SVP",
+    )
+    tasks_service.get_or_create_task_type(
+        ai_dept,
+        "seq_video_generation",
+        "#2980b9",
+        priority=2,
+        for_entity="Sequence",
+        short_name="SVG",
+    )
+    tasks_service.get_or_create_task_type(
+        ai_dept,
+        "seq_quality_review",
+        "#27ae60",
+        priority=3,
+        for_entity="Sequence",
+        short_name="SQR",
+    )
+
 
 def init_data(domain="3d"):
     """

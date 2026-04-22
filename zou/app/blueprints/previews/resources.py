@@ -14,6 +14,7 @@ from zou.app.utils import validation as validation_utils
 from zou.app.blueprints.previews.schemas import (
     PreviewFileUploadSchema,
     PreviewFilePositionSchema,
+    PreviewFileFromUrlSchema,
 )
 from zou.app.stores import file_store
 from zou.app.services import (
@@ -462,6 +463,82 @@ class CreatePreviewFilePictureResource(
 
         user_service.check_task_action_access(preview_file["task_id"])
         return True
+
+
+class CreatePreviewFileFromUrlResource(
+    BaseNewPreviewFilePicture, Resource, ArgsMixin
+):
+    """
+    Upload a preview file from an external URL instead of multipart
+    form data.  Zou downloads the file from the URL to a temp
+    directory, then processes it through the standard preview
+    pipeline (thumbnails, normalization).
+    """
+
+    @jwt_required()
+    def post(self, instance_id):
+        self.is_allowed(instance_id)
+        data = validation_utils.validate_request_body(
+            PreviewFileFromUrlSchema
+        )
+
+        tmp_folder = config.TMP_DIR
+        extension = self._detect_extension(data.url)
+        tmp_path = os.path.join(tmp_folder, f"{instance_id}.{extension}")
+        self._download_url(data.url, tmp_path)
+
+        uploaded_file = self._make_file_wrapper(tmp_path, extension)
+        return (
+            self.process_uploaded_file(
+                instance_id, uploaded_file, abort_on_failed=True
+            ),
+            201,
+        )
+
+    def is_allowed(self, preview_file_id):
+        preview_file = files_service.get_preview_file(preview_file_id)
+        if preview_file["original_name"]:
+            raise PreviewFileReuploadNotAllowedException
+        user_service.check_task_action_access(preview_file["task_id"])
+        return True
+
+    @staticmethod
+    def _download_url(url, dest_path):
+        """Download file from URL using streaming."""
+        import requests
+
+        resp = requests.get(url, stream=True, timeout=300)
+        resp.raise_for_status()
+        with open(dest_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+    @staticmethod
+    def _detect_extension(url):
+        """Extract extension from URL path."""
+        from urllib.parse import urlparse
+
+        path = urlparse(url).path
+        ext = (
+            path.rsplit(".", 1)[-1].lower() if "." in path else "png"
+        )
+        return ext
+
+    @staticmethod
+    def _make_file_wrapper(file_path, extension):
+        """Wrap a local file as a FileStorage-like object."""
+
+        class _LocalFileWrapper:
+            def __init__(self, path, ext):
+                self.filename = f"from_url.{ext}"
+                self._path = path
+
+            def save(self, dest):
+                import shutil
+
+                shutil.copy2(self._path, dest)
+
+        return _LocalFileWrapper(file_path, extension)
 
 
 class BaseBatchComment(BaseNewPreviewFilePicture, ArgsMixin):

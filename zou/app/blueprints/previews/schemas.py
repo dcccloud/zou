@@ -19,3 +19,9 @@ class PreviewFilePositionSchema(BaseSchema):
     """Body for updating preview file position."""
 
     position: int = Field(0, ge=0)
+
+
+class PreviewFileFromUrlSchema(BaseSchema):
+    """Body for uploading a preview file from an external URL."""
+
+    url: str = Field(..., description="Source file URL (OSS/HTTP)")
