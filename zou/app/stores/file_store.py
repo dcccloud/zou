@@ -21,7 +21,11 @@ def _s3_init_virtual_host(self, name, cfg):
     self.session = boto3.session.Session()
     self.s3config = boto3.session.Config(
         signature_version="s3v4",
-        s3={"addressing_style": "virtual"},
+        s3={
+            "addressing_style": "virtual",
+            "payload_signing_enabled": True,
+        },
+        request_checksum_calculation="when_required",
     )
     self.s3 = self.session.resource(
         "s3",

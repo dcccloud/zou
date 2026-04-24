@@ -535,8 +535,10 @@ class CreatePreviewFileFromUrlResource(
 
             def save(self, dest):
                 import shutil
+                import os
 
-                shutil.copy2(self._path, dest)
+                if os.path.abspath(self._path) != os.path.abspath(dest):
+                    shutil.copy2(self._path, dest)
 
         return _LocalFileWrapper(file_path, extension)
 
