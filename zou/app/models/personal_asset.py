@@ -11,8 +11,12 @@ class PersonalAsset(db.Model, BaseMixin, SerializerMixin):
     description = db.Column(db.Text())
     file_name = db.Column(db.String(250))
     extension = db.Column(db.String(10))
+    mime_type = db.Column(db.String(255))
     file_size = db.Column(db.BigInteger(), default=0)
+    file_hash = db.Column(db.String(64), index=True)
+    url = db.Column(db.Text())
     source = db.Column(db.String(40), default="upload")
+    source_id = db.Column(db.String(255), index=True)
     data = db.Column(JSONB)
 
     person_id = db.Column(
@@ -32,14 +36,6 @@ class PersonalAsset(db.Model, BaseMixin, SerializerMixin):
         db.ForeignKey("entity.id"),
         nullable=True,
         index=True,
-    )
-
-    __table_args__ = (
-        db.UniqueConstraint(
-            "name",
-            "person_id",
-            name="personal_asset_uc",
-        ),
     )
 
     def __repr__(self):

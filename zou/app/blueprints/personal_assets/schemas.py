@@ -11,8 +11,12 @@ class CreatePersonalAssetSchema(BaseSchema):
     description: Optional[str] = ""
     file_name: Optional[str] = None
     extension: Optional[str] = None
+    mime_type: Optional[str] = None
     file_size: Optional[int] = 0
+    file_hash: Optional[str] = None
+    url: Optional[str] = None
     source: Optional[str] = "upload"
+    source_id: Optional[str] = None
     data: Optional[dict] = Field(default={})
     project_id: Optional[UUID] = None
 
@@ -22,8 +26,12 @@ class UpdatePersonalAssetSchema(BaseSchema):
     description: Optional[str] = None
     file_name: Optional[str] = None
     extension: Optional[str] = None
+    mime_type: Optional[str] = None
     file_size: Optional[int] = None
+    file_hash: Optional[str] = None
+    url: Optional[str] = None
     source: Optional[str] = None
+    source_id: Optional[str] = None
     data: Optional[dict] = None
     project_id: Optional[UUID] = None
 
