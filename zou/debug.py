@@ -16,5 +16,9 @@ if __name__ == "__main__":
         f"The Kitsu API server is listening on http://{config.DEBUG_HOST}:{config.DEBUG_PORT}"
     )
     socketio.run(
-        app, host=config.DEBUG_HOST, port=config.DEBUG_PORT, debug=True
+        app,
+        host=config.DEBUG_HOST,
+        port=config.DEBUG_PORT,
+        debug=config.DEBUG,
+        use_reloader=False,
     )

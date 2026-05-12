@@ -1,9 +1,33 @@
-import os
 import datetime
+import os
 import tempfile
+from pathlib import Path
 
 from zou.app.utils import dbhelpers
 from zou.app.utils.env import envtobool, env_with_semicolon_to_list
+
+
+def _load_dotenv():
+    dotenv_path = Path.cwd() / ".env"
+    if not dotenv_path.is_file():
+        return
+
+    for raw_line in dotenv_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+
+        os.environ.setdefault(key, value)
+
+
+_load_dotenv()
 
 PROPAGATE_EXCEPTIONS = True
 DEBUG = envtobool("DEBUG", False)
@@ -20,14 +44,15 @@ BCRYPT_LOG_ROUNDS = int(os.getenv("BCRYPT_LOG_ROUNDS", 12))
 KEY_VALUE_STORE = {
     "host": os.getenv("KV_HOST", "localhost"),
     "port": os.getenv("KV_PORT", "6379"),
+    "username": os.getenv("KV_USERNAME", None),
     "password": os.getenv("KV_PASSWORD", None),
 }
 CACHE_TYPE = os.getenv("CACHE_TYPE", None)
-AUTH_TOKEN_BLACKLIST_KV_INDEX = 0
-MEMOIZE_DB_INDEX = 1
-KV_EVENTS_DB_INDEX = 2
-KV_JOB_DB_INDEX = 3
-KV_CONFIG_DB_INDEX = 4
+AUTH_TOKEN_BLACKLIST_KV_INDEX = 10
+MEMOIZE_DB_INDEX = 11
+KV_EVENTS_DB_INDEX = 12
+KV_JOB_DB_INDEX = 13
+KV_CONFIG_DB_INDEX = 14
 
 JWT_BLACKLIST_ENABLED = True
 JWT_BLACKLIST_TOKEN_CHECKS = ["access", "refresh"]
@@ -81,7 +106,7 @@ PREVIEW_SAVE_SOURCE_FILE = envtobool("PREVIEW_SAVE_SOURCE_FILE", False)
 TMP_DIR = os.getenv("TMP_DIR", os.path.join(tempfile.gettempdir(), "zou"))
 
 EVENT_STREAM_HOST = os.getenv("EVENT_STREAM_HOST", "localhost")
-EVENT_STREAM_PORT = os.getenv("EVENT_STREAM_PORT", 5001)
+EVENT_STREAM_PORT = int(os.getenv("EVENT_STREAM_PORT", 5001))
 EVENT_HANDLERS_FOLDER = os.getenv(
     "EVENT_HANDLERS_FOLDER", os.path.join(os.getcwd(), "event_handlers")
 )
