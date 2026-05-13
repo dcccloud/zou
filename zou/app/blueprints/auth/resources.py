@@ -18,6 +18,7 @@ from flask_jwt_extended import (
     unset_jwt_cookies,
     unset_refresh_cookies,
     get_jwt,
+    decode_token,
 )
 
 from sqlalchemy.exc import OperationalError, TimeoutError
@@ -38,6 +39,7 @@ from zou.app.blueprints.auth.schemas import (
     EmailOtpSchema,
     FidoRegisterSchema,
     FidoUnregisterSchema,
+    DelegateTokenSchema,
 )
 from zou.app.utils.email_i18n import get_email_translation
 from zou.app.services import (
@@ -1567,3 +1569,69 @@ class SAMLLoginResource(Resource, ArgsMixin):
                 redirect_url = value
 
         return redirect(redirect_url, code=302)
+
+
+class DelegateTokenResource(Resource):
+    @jwt_required()
+    def post(self):
+        permissions.check_admin_permissions()
+        data = validation.validate_request_body(DelegateTokenSchema)
+        person = persons_service.get_person_raw(data.person_id)
+        if not person.active:
+            raise UnactiveUserException()
+
+        ts = str(int(date_helpers.get_utc_now_datetime().timestamp()))
+        msg = f"{person.id}:{ts}"
+        sig = hmac.new(
+            config.SECRET_KEY.encode(),
+            msg.encode(),
+            "sha256",
+        ).hexdigest()
+
+        login_url = (
+            f"/auth/delegate-login"
+            f"?pid={person.id}&ts={ts}&sig={sig}"
+        )
+        return {"login_url": login_url}
+
+
+class DelegateLoginResource(Resource):
+    def get(self):
+        pid = request.args.get("pid", "")
+        ts = request.args.get("ts", "")
+        sig = request.args.get("sig", "")
+
+        if not pid or not ts or not sig:
+            return {"error": "Missing parameters"}, 400
+
+        expected = hmac.new(
+            config.SECRET_KEY.encode(),
+            f"{pid}:{ts}".encode(),
+            "sha256",
+        ).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return {"error": "Invalid signature"}, 403
+
+        now = int(date_helpers.get_utc_now_datetime().timestamp())
+        if abs(now - int(ts)) > 60:
+            return {"error": "Token expired"}, 403
+
+        person = persons_service.get_person_raw(pid)
+        if not person or not person.active:
+            return {"error": "Person not found"}, 404
+
+        claims = {"identity_type": "person"}
+        access_token = create_access_token(
+            identity=person.id,
+            additional_claims=claims,
+        )
+        refresh_token = create_refresh_token(
+            identity=person.id,
+            additional_claims=claims,
+        )
+
+        kitsu_url = config.KITSU_URL
+        response = make_response(redirect(kitsu_url, code=302))
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, refresh_token)
+        return response

@@ -194,6 +194,8 @@ PROMETHEUS_METRICS_ENABLED = envtobool("PROMETHEUS_METRICS_ENABLED", False)
 CRISP_TOKEN = os.getenv("CRISP_TOKEN", "")
 IS_SELF_HOSTED = envtobool("IS_SELF_HOSTED", True)
 
+KITSU_URL = os.getenv("KITSU_URL", "http://localhost:8080")
+
 DEFAULT_TIMEZONE = os.getenv("DEFAULT_TIMEZONE", "Europe/Paris")
 DEFAULT_LOCALE = os.getenv("DEFAULT_LOCALE", "en_US")
 
