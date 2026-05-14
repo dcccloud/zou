@@ -1,7 +1,7 @@
 import os
 import orjson as json
 
-from flask import abort, request, current_app
+from flask import abort, redirect, request, current_app
 from flask import send_file as flask_send_file
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
@@ -1140,6 +1140,10 @@ class BasePreviewPictureResource(BasePreviewFileResource):
         """
         self.is_allowed(instance_id)
 
+        external_url = self._get_external_s3_url(instance_id)
+        if external_url:
+            return redirect(external_url)
+
         try:
             return send_picture_file(
                 self.picture_type,
@@ -1152,6 +1156,27 @@ class BasePreviewPictureResource(BasePreviewFileResource):
                     "Picture file was not found for: %s" % instance_id
                 )
             raise PreviewFileNotFoundException
+
+    def _get_external_s3_url(self, instance_id):
+        preview_file = getattr(self, "preview_file", None)
+        if preview_file is None:
+            try:
+                preview_file = files_service.get_preview_file(
+                    instance_id
+                )
+            except Exception:
+                return None
+        data = preview_file.get("data") or {}
+        use_thumb = self.picture_type in (
+            "thumbnails",
+            "thumbnails-square",
+        )
+        key = data.get("thumb_s3_key") if use_thumb else None
+        if not key:
+            key = data.get("s3_key")
+        if not key:
+            return None
+        return file_store.generate_external_presigned_url(key)
 
 
 class BasePreviewFileThumbnailResource(BasePreviewPictureResource):

@@ -270,3 +270,40 @@ def copy_file(prefix, id, new_prefix, new_id):
     key = make_key(prefix, id)
     target = make_key(new_prefix, new_id)
     return files.copy(key, target)
+
+
+_external_s3_client = None
+
+
+def _get_external_s3_client():
+    global _external_s3_client
+    if _external_s3_client is not None:
+        return _external_s3_client
+    if not config.EXTERNAL_S3_ENDPOINT or not config.EXTERNAL_S3_BUCKET:
+        return None
+    _external_s3_client = boto3.client(
+        "s3",
+        endpoint_url=config.EXTERNAL_S3_ENDPOINT,
+        region_name=config.EXTERNAL_S3_REGION or "us-east-1",
+        aws_access_key_id=config.EXTERNAL_S3_ACCESS_KEY,
+        aws_secret_access_key=config.EXTERNAL_S3_SECRET_KEY,
+        config=boto3.session.Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "virtual"},
+        ),
+    )
+    return _external_s3_client
+
+
+def generate_external_presigned_url(key, expiration=7200):
+    client = _get_external_s3_client()
+    if client is None:
+        return None
+    return client.generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": config.EXTERNAL_S3_BUCKET,
+            "Key": key,
+        },
+        ExpiresIn=expiration,
+    )
