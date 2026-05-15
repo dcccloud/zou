@@ -25,6 +25,7 @@ def get_redis_client():
             host=config.KEY_VALUE_STORE["host"],
             port=config.KEY_VALUE_STORE["port"],
             db=config.MEMOIZE_DB_INDEX,
+            username=config.KEY_VALUE_STORE.get("username"),
             password=config.KEY_VALUE_STORE["password"],
             decode_responses=True,
         )

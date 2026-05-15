@@ -20,14 +20,17 @@ BCRYPT_LOG_ROUNDS = int(os.getenv("BCRYPT_LOG_ROUNDS", 12))
 KEY_VALUE_STORE = {
     "host": os.getenv("KV_HOST", "localhost"),
     "port": os.getenv("KV_PORT", "6379"),
+    "username": os.getenv("KV_USERNAME", None),
     "password": os.getenv("KV_PASSWORD", None),
 }
 CACHE_TYPE = os.getenv("CACHE_TYPE", None)
-AUTH_TOKEN_BLACKLIST_KV_INDEX = 0
-MEMOIZE_DB_INDEX = 1
-KV_EVENTS_DB_INDEX = 2
-KV_JOB_DB_INDEX = 3
-KV_CONFIG_DB_INDEX = 4
+AUTH_TOKEN_BLACKLIST_KV_INDEX = int(
+    os.getenv("KV_AUTH_TOKEN_BLACKLIST_KV_INDEX", 0)
+)
+MEMOIZE_DB_INDEX = int(os.getenv("KV_MEMOIZE_DB_INDEX", 1))
+KV_EVENTS_DB_INDEX = int(os.getenv("KV_EVENTS_DB_INDEX", 2))
+KV_JOB_DB_INDEX = int(os.getenv("KV_JOB_DB_INDEX", 3))
+KV_CONFIG_DB_INDEX = int(os.getenv("KV_CONFIG_DB_INDEX", 4))
 
 JWT_BLACKLIST_ENABLED = True
 JWT_BLACKLIST_TOKEN_CHECKS = ["access", "refresh"]

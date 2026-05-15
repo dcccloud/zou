@@ -35,17 +35,17 @@ else:
             host=config.KEY_VALUE_STORE["host"],
             port=config.KEY_VALUE_STORE["port"],
             db=config.MEMOIZE_DB_INDEX,
+            username=config.KEY_VALUE_STORE.get("username"),
             password=config.KEY_VALUE_STORE["password"],
             decode_responses=True,
         )
         redis_cache.get("test")
+        from zou.app.utils.redis import get_redis_url
+
         cache = Cache(
             config={
                 "CACHE_TYPE": "redis",
-                "CACHE_REDIS_HOST": config.KEY_VALUE_STORE["host"],
-                "CACHE_REDIS_PORT": config.KEY_VALUE_STORE["port"],
-                "CACHE_REDIS_DB": config.MEMOIZE_DB_INDEX,
-                "CACHE_REDIS_PASSWORD": config.KEY_VALUE_STORE["password"],
+                "CACHE_REDIS_URL": get_redis_url(config.MEMOIZE_DB_INDEX),
             }
         )
     except redis.ConnectionError:
