@@ -1,5 +1,5 @@
 from tests.base import ApiDBTestCase
-from zou.app.services import personal_assets_service
+from zou.app.services import personal_assets_service, persons_service
 from zou.app.services.exception import (
     PersonalAssetNotFoundException,
 )
@@ -73,10 +73,15 @@ class PersonalAssetServiceTestCase(ApiDBTestCase):
         created = personal_assets_service.create_personal_asset(
             person_id=self.user["id"], name="Promotable"
         )
-        result = personal_assets_service.promote_to_entity(
-            created["id"],
-            project_id=str(self.project.id),
-            asset_type_id=str(self.asset_type.id),
-        )
+        old_get_current_user = persons_service.get_current_user
+        persons_service.get_current_user = lambda: self.user
+        try:
+            result = personal_assets_service.promote_to_entity(
+                created["id"],
+                project_id=str(self.project.id),
+                asset_type_id=str(self.asset_type.id),
+            )
+        finally:
+            persons_service.get_current_user = old_get_current_user
         self.assertIsNotNone(result["entity_id"])
         self.assertEqual(result["project_id"], str(self.project.id))
