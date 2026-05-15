@@ -103,3 +103,11 @@ class FidoUnregisterSchema(BaseSchema):
     email_otp: Optional[str] = None
     fido_authentication_response: Optional[dict] = Field(default={})
     recovery_code: Optional[str] = None
+
+
+class DelegateTokenSchema(BaseSchema):
+    """Body for requesting a delegate login token."""
+
+    person_id: str = Field(
+        ..., min_length=1, description="Target person UUID"
+    )

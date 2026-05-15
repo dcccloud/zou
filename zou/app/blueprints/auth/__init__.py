@@ -4,6 +4,8 @@ from zou.app.utils.api import configure_api_from_blueprint
 from zou.app.blueprints.auth.resources import (
     AuthenticatedResource,
     ChangePasswordResource,
+    DelegateLoginResource,
+    DelegateTokenResource,
     EmailOTPResource,
     FIDOResource,
     LoginResource,
@@ -31,6 +33,8 @@ routes = [
     ("/auth/fido", FIDOResource),
     ("/auth/saml/sso", SAMLSSOResource),
     ("/auth/saml/login", SAMLLoginResource),
+    ("/auth/delegate-token", DelegateTokenResource),
+    ("/auth/delegate-login", DelegateLoginResource),
 ]
 
 blueprint = Blueprint("auth", "auth")

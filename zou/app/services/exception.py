@@ -315,3 +315,7 @@ class IsUserLimitReachedException(Exception):
 
 class ProductionScheduleVersionNotFoundException(NotFound):
     pass
+
+
+class PersonalAssetNotFoundException(NotFound):
+    pass

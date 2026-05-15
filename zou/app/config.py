@@ -1,9 +1,33 @@
-import os
 import datetime
+import os
 import tempfile
+from pathlib import Path
 
 from zou.app.utils import dbhelpers
 from zou.app.utils.env import envtobool, env_with_semicolon_to_list
+
+
+def _load_dotenv():
+    dotenv_path = Path.cwd() / ".env"
+    if not dotenv_path.is_file():
+        return
+
+    for raw_line in dotenv_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+
+        os.environ.setdefault(key, value)
+
+
+_load_dotenv()
 
 PROPAGATE_EXCEPTIONS = True
 DEBUG = envtobool("DEBUG", False)
@@ -25,12 +49,12 @@ KEY_VALUE_STORE = {
 }
 CACHE_TYPE = os.getenv("CACHE_TYPE", None)
 AUTH_TOKEN_BLACKLIST_KV_INDEX = int(
-    os.getenv("KV_AUTH_TOKEN_BLACKLIST_KV_INDEX", 0)
+    os.getenv("KV_AUTH_TOKEN_BLACKLIST_KV_INDEX", 10)
 )
-MEMOIZE_DB_INDEX = int(os.getenv("KV_MEMOIZE_DB_INDEX", 1))
-KV_EVENTS_DB_INDEX = int(os.getenv("KV_EVENTS_DB_INDEX", 2))
-KV_JOB_DB_INDEX = int(os.getenv("KV_JOB_DB_INDEX", 3))
-KV_CONFIG_DB_INDEX = int(os.getenv("KV_CONFIG_DB_INDEX", 4))
+MEMOIZE_DB_INDEX = int(os.getenv("KV_MEMOIZE_DB_INDEX", 11))
+KV_EVENTS_DB_INDEX = int(os.getenv("KV_EVENTS_DB_INDEX", 12))
+KV_JOB_DB_INDEX = int(os.getenv("KV_JOB_DB_INDEX", 13))
+KV_CONFIG_DB_INDEX = int(os.getenv("KV_CONFIG_DB_INDEX", 14))
 
 JWT_BLACKLIST_ENABLED = True
 JWT_BLACKLIST_TOKEN_CHECKS = ["access", "refresh"]
@@ -84,7 +108,7 @@ PREVIEW_SAVE_SOURCE_FILE = envtobool("PREVIEW_SAVE_SOURCE_FILE", False)
 TMP_DIR = os.getenv("TMP_DIR", os.path.join(tempfile.gettempdir(), "zou"))
 
 EVENT_STREAM_HOST = os.getenv("EVENT_STREAM_HOST", "localhost")
-EVENT_STREAM_PORT = os.getenv("EVENT_STREAM_PORT", 5001)
+EVENT_STREAM_PORT = int(os.getenv("EVENT_STREAM_PORT", 5001))
 EVENT_HANDLERS_FOLDER = os.getenv(
     "EVENT_HANDLERS_FOLDER", os.path.join(os.getcwd(), "event_handlers")
 )
@@ -129,6 +153,12 @@ FS_S3_CREATE_BUCKET = envtobool("FS_S3_CREATE_BUCKET", False)
 FS_S3_AES256_ENCRYPTED = envtobool("FS_S3_AES256_ENCRYPTED", False)
 FS_S3_AES256_KEY = os.getenv("FS_S3_AES256_KEY")
 
+EXTERNAL_S3_ENDPOINT = os.getenv("EXTERNAL_S3_ENDPOINT")
+EXTERNAL_S3_REGION = os.getenv("EXTERNAL_S3_REGION")
+EXTERNAL_S3_ACCESS_KEY = os.getenv("EXTERNAL_S3_ACCESS_KEY")
+EXTERNAL_S3_SECRET_KEY = os.getenv("EXTERNAL_S3_SECRET_KEY")
+EXTERNAL_S3_BUCKET = os.getenv("EXTERNAL_S3_BUCKET")
+
 ENABLE_JOB_QUEUE = envtobool("ENABLE_JOB_QUEUE", False)
 ENABLE_JOB_QUEUE_REMOTE = envtobool("ENABLE_JOB_QUEUE_REMOTE", False)
 JOB_QUEUE_NOMAD_PLAYLIST_JOB = os.getenv(
@@ -171,6 +201,8 @@ PROMETHEUS_METRICS_ENABLED = envtobool("PROMETHEUS_METRICS_ENABLED", False)
 
 CRISP_TOKEN = os.getenv("CRISP_TOKEN", "")
 IS_SELF_HOSTED = envtobool("IS_SELF_HOSTED", True)
+
+KITSU_URL = os.getenv("KITSU_URL", "http://localhost:8080")
 
 DEFAULT_TIMEZONE = os.getenv("DEFAULT_TIMEZONE", "Europe/Paris")
 DEFAULT_LOCALE = os.getenv("DEFAULT_LOCALE", "en_US")

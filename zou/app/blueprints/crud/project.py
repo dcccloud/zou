@@ -186,6 +186,9 @@ class ProjectsResource(BaseModelsResource):
     def check_read_permissions(self, options=None):
         return True
 
+    def check_create_permissions(self, data):
+        return True
+
     def check_creation_integrity(self, data):
         """
         Check if the data descriptor has a valid production_style and
@@ -260,6 +263,10 @@ class ProjectsResource(BaseModelsResource):
             project_dict["first_episode_id"] = fields.serialize_value(
                 episode["id"]
             )
+        current_user = persons_service.get_current_user()
+        projects_service.add_team_member(
+            str(project.id), current_user["id"]
+        )
         user_service.clear_project_cache()
         projects_service.clear_project_cache("")
         return project_dict

@@ -1,4 +1,5 @@
 from urllib.parse import quote
+
 from zou.app import config
 
 

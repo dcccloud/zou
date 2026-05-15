@@ -22,6 +22,7 @@ from functools import wraps
 
 from flask_caching import Cache
 from zou.app import config
+from zou.app.utils.redis import get_redis_url
 
 cache = None
 _is_simple_cache = False
