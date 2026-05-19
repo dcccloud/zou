@@ -1,26 +1,26 @@
 edition: 3.0.0
-name: zou-backend
+name: zou-backend-dev
 access: "default-volcano"
 
 vars:
-  sid: "zou"
+  sid: "zou-dev"
   region: "cn-beijing"
-  functionName: "zou-backend-function"
+  functionName: "zou-backend-dev-function"
 
 resources:
-  zou_backend:
+  zou_backend_dev:
     component: volcano-vefaas
     props:
       common:
         Region: ${vars.region}
       function:
         Name: ${vars.functionName}
-        Description: "Zou (Kitsu) backend API"
+        Description: "Zou (Kitsu) backend API - dev"
         ExclusiveMode: true
         RequestTimeout: 600
         Runtime: native/v1
         SourceType: image
-        Source: dcc-cloud2-cn-beijing.cr.volces.com/dcc-cloud/zou-backend:0.0.3
+        Source: dcc-cloud2-cn-beijing.cr.volces.com/dcc-cloud/zou-backend:dev
         MemoryMB: 8192
         Processor: cpu
         Port: 8000
@@ -28,53 +28,53 @@ resources:
           - Key: PORT
             Value: "8000"
           - Key: DB_HOST
-            Value: "cp-right-snap-882d737b.pg7.aidap-global.cn-beijing.volces.com"
+            Value: ${env(DB_HOST)}
           - Key: DB_PORT
-            Value: "5432"
+            Value: ${env(DB_PORT)}
           - Key: DB_DATABASE
-            Value: "aidb"
+            Value: ${env(DB_DATABASE)}
           - Key: DB_USERNAME
-            Value: "user_admin"
+            Value: ${env(DB_USERNAME)}
           - Key: DB_PASSWORD
             Value: ${env(DB_PASSWORD)}
           - Key: KV_HOST
-            Value: "redis-cnlfksdzmxmoe449a.redis.volces.com"
+            Value: ${env(KV_HOST)}
           - Key: KV_PORT
-            Value: "6379"
+            Value: ${env(KV_PORT)}
           - Key: KV_USERNAME
-            Value: "kevin"
+            Value: ${env(KV_USERNAME)}
           - Key: KV_PASSWORD
             Value: ${env(KV_PASSWORD)}
           - Key: KV_AUTH_TOKEN_BLACKLIST_KV_INDEX
-            Value: "10"
+            Value: ${env(KV_AUTH_TOKEN_BLACKLIST_KV_INDEX)}
           - Key: KV_MEMOIZE_DB_INDEX
-            Value: "11"
+            Value: ${env(KV_MEMOIZE_DB_INDEX)}
           - Key: KV_EVENTS_DB_INDEX
-            Value: "12"
+            Value: ${env(KV_EVENTS_DB_INDEX)}
           - Key: KV_JOB_DB_INDEX
-            Value: "13"
+            Value: ${env(KV_JOB_DB_INDEX)}
           - Key: KV_CONFIG_DB_INDEX
-            Value: "14"
+            Value: ${env(KV_CONFIG_DB_INDEX)}
           - Key: SECRET_KEY
             Value: ${env(SECRET_KEY)}
           - Key: DOMAIN_NAME
             Value: ${env(DOMAIN_NAME)}
           - Key: DOMAIN_PROTOCOL
-            Value: "https"
+            Value: ${env(DOMAIN_PROTOCOL)}
           - Key: MAIL_ENABLED
-            Value: "False"
+            Value: ${env(MAIL_ENABLED)}
           - Key: FS_BACKEND
-            Value: "s3"
+            Value: ${env(FS_BACKEND)}
           - Key: FS_S3_REGION
-            Value: "oss-cn-beijing"
+            Value: ${env(FS_S3_REGION)}
           - Key: FS_S3_ENDPOINT
-            Value: "https://oss-cn-beijing.aliyuncs.com"
+            Value: ${env(FS_S3_ENDPOINT)}
           - Key: FS_S3_ACCESS_KEY
             Value: ${env(FS_S3_ACCESS_KEY)}
           - Key: FS_S3_SECRET_KEY
             Value: ${env(FS_S3_SECRET_KEY)}
           - Key: FS_BUCKET_PREFIX
-            Value: "dcc-kitsu-"
+            Value: ${env(FS_BUCKET_PREFIX)}
           - Key: PREVIEW_FOLDER
             Value: "/tmp/previews"
           - Key: TMP_DIR
@@ -84,14 +84,14 @@ resources:
           - Key: PROMETHEUS_METRICS_ENABLED
             Value: "False"
       replicaLimit:
-        MaxInstance: 100
+        MaxInstance: 10
       triggers:
-        - TriggerName: apig-trigger
+        - TriggerName: apig-trigger-dev
           TriggerType: apig
-          GatewayId: "gcp1jht7vgc9hjb8nftb0"
-          ServiceName: "service-zou"
-          UpstreamName: "upstream-zou"
-          RouteName: default
+          GatewayId: ${env(DEV_APIG_GATEWAY_ID)}
+          ServiceName: "service-zou-dev"
+          UpstreamName: "upstream-zou-dev"
+          RouteName: dev
           Path: "/"
           Method:
             - POST
