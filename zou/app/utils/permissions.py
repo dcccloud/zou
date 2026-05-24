@@ -1,4 +1,5 @@
 from functools import wraps
+from flask_jwt_extended import get_jwt
 from flask_principal import RoleNeed, Permission
 from werkzeug.exceptions import Forbidden
 
@@ -16,6 +17,16 @@ person_api_permission = Permission(RoleNeed("person_api"))
 
 class PermissionDenied(Forbidden):
     pass
+
+
+def get_current_identity_type():
+    """
+    Return the JWT identity type when a request is authenticated.
+    """
+    try:
+        return get_jwt().get("identity_type")
+    except RuntimeError:
+        return None
 
 
 def has_manager_permissions():
@@ -64,7 +75,10 @@ def has_person_permissions():
     """
     Return True if user is a person.
     """
-    return person_permission.can()
+    return person_permission.can() or get_current_identity_type() in [
+        "person",
+        "person_api",
+    ]
 
 
 def has_at_least_supervisor_permissions():

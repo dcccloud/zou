@@ -1,0 +1,75 @@
+edition: 1.0.0
+name: zou-backend
+# access 是当前应用所需要的密钥信息配置：
+# 密钥配置可以参考：https://www.serverless-devs.com/serverless-devs/command/config
+# 密钥使用顺序可以参考：https://www.serverless-devs.com/serverless-devs/tool#密钥使用顺序与规范
+access: 'default'
+
+vars: # 全局变量
+  region: 'cn-hangzhou'
+  service:
+    name: zou-backend-service
+    description: 'hello world by serverless devs'
+    internetAccess: true
+    role: "acs:ram::1461585705826999:role/aliyunfcdefaultrole"
+
+services:
+  zou-backend:
+    component: fc
+    props:
+      region: ${vars.region}
+      service: ${vars.service}
+      function:
+        name: 'zou-backend-func'
+        description: 'Zou (Kitsu) backend API'
+        caPort: 9000
+        handler: index.handler
+        diskSize: 512
+        timeout: 9000
+        runtime: custom-container
+        cpu: 8
+        customContainerConfig:
+          args: ''
+          accelerationType: Default
+          image: 'registry.cn-hangzhou.aliyuncs.com/dcc-cloud/zou-backend:0.0.1'
+          accelerationInfo:
+            status: Preparing
+          command: ''
+        instanceConcurrency: 10
+        memorySize: 32768
+        asyncConfiguration: {}
+        environmentVariables:
+          DB_HOST: ''
+          DB_PORT: '5432'
+          DB_DATABASE: 'zoudb'
+          DB_USERNAME: ''
+          DB_PASSWORD: ''
+          KV_HOST: ''
+          KV_PORT: '6379'
+          KV_PASSWORD: ''
+          SECRET_KEY: ''
+          JWT_SECRET_KEY: ''
+          DOMAIN_NAME: ''
+          DOMAIN_PROTOCOL: 'https'
+          MAIL_ENABLED: 'False'
+          FS_BACKEND: 's3'
+          FS_S3_REGION: 'oss-cn-hangzhou'
+          FS_S3_ENDPOINT: 'https://oss-cn-hangzhou.aliyuncs.com'
+          FS_S3_ACCESS_KEY: ${env(FS_S3_ACCESS_KEY)}
+          FS_S3_SECRET_KEY: ${env(FS_S3_SECRET_KEY)}
+          FS_BUCKET_PREFIX: ''
+          PREVIEW_FOLDER: '/tmp/previews'
+          TMP_DIR: '/tmp/zou'
+          ENABLE_JOB_QUEUE: 'False'
+          PROMETHEUS_METRICS_ENABLED: 'False'
+      triggers:
+        - name: httpTrigger
+          type: http
+          qualifier: LATEST
+          config:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE

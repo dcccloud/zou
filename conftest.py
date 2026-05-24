@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import flask_bcrypt
 import pytest
@@ -26,6 +27,34 @@ def _fast_generate(password, rounds=None):
 flask_bcrypt.generate_password_hash = _fast_generate
 
 
+def _is_faas_only_test_session(config):
+    args = getattr(config, "args", None) or []
+    if not args:
+        return False
+
+    root_path = Path(str(config.rootpath))
+    faas_path = (root_path / "tests" / "faas").resolve()
+    checked_paths = []
+    for arg in args:
+        if arg.startswith("-"):
+            continue
+        path_arg = arg.split("::", 1)[0]
+        path = Path(path_arg)
+        if not path.is_absolute():
+            path = root_path / path
+        checked_paths.append(path)
+
+    if not checked_paths:
+        return False
+
+    for path in checked_paths:
+        try:
+            path.resolve().relative_to(faas_path)
+        except ValueError:
+            return False
+    return True
+
+
 @pytest.fixture(autouse=True)
 def _skip_bcrypt_check(request, monkeypatch):
     """Bypass bcrypt verification during login for non-auth tests."""
@@ -38,6 +67,9 @@ def _skip_bcrypt_check(request, monkeypatch):
 
 def pytest_configure(config):
     """Create database schema once for the entire test session."""
+    if _is_faas_only_test_session(config):
+        return
+
     from zou.app import app
     from zou.app.utils import dbhelpers
 
@@ -58,6 +90,9 @@ def pytest_configure(config):
 
 def pytest_unconfigure(config):
     """Drop database schema at the end of the test session."""
+    if _is_faas_only_test_session(config):
+        return
+
     from zou.app import app
     from zou.app.utils import dbhelpers
 

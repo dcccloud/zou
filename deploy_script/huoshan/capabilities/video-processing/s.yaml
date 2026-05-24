@@ -1,26 +1,27 @@
 edition: 3.0.0
-name: zou-backend-dev
+name: zou-capability-video-processing
 access: "default-volcano"
 
 vars:
-  sid: "zou-dev"
   region: "cn-beijing"
-  functionName: "zou-backend-dev-function"
+  functionName: "zou-capability-video-processing"
 
 resources:
-  zou_backend_dev:
+  capability_video_processing:
     component: volcano-vefaas
     props:
       common:
         Region: ${vars.region}
       function:
         Name: ${vars.functionName}
-        Description: "Zou (Kitsu) backend API - dev"
+        Description: "Zou video processing capability"
         ExclusiveMode: true
-        RequestTimeout: 600
+        RequestTimeout: 10800
+        AsyncConfig: # 异步配置
+          EnableAsyncTask: true # 开启异步任务
         Runtime: native/v1
         SourceType: image
-        Source: ${env(DEV_IMAGE)}
+        Source: ${env(CAPABILITY_IMAGE)}
         MemoryMB: 8192
         Processor: cpu
         Port: 8000
@@ -28,7 +29,11 @@ resources:
           - Key: PORT
             Value: "8000"
           - Key: ZOU_APP_PROFILE
-            Value: "faas"
+            Value: "capability"
+          - Key: FAAS_CAPABILITY_NAME
+            Value: "video-processing"
+          - Key: FAAS_CAPABILITY_TOKEN
+            Value: ${env(FAAS_CAPABILITY_TOKEN)}
           - Key: DB_HOST
             Value: ${env(DB_HOST)}
           - Key: DB_PORT
@@ -47,30 +52,8 @@ resources:
             Value: ${env(KV_USERNAME)}
           - Key: KV_PASSWORD
             Value: ${env(KV_PASSWORD)}
-          - Key: KV_AUTH_TOKEN_BLACKLIST_KV_INDEX
-            Value: ${env(KV_AUTH_TOKEN_BLACKLIST_KV_INDEX)}
-          - Key: KV_MEMOIZE_DB_INDEX
-            Value: ${env(KV_MEMOIZE_DB_INDEX)}
-          - Key: KV_EVENTS_DB_INDEX
-            Value: ${env(KV_EVENTS_DB_INDEX)}
-          - Key: KV_JOB_DB_INDEX
-            Value: ${env(KV_JOB_DB_INDEX)}
-          - Key: KV_CONFIG_DB_INDEX
-            Value: ${env(KV_CONFIG_DB_INDEX)}
           - Key: KV_CAPABILITY_JOBS_DB_INDEX
             Value: ${env(KV_CAPABILITY_JOBS_DB_INDEX)}
-          - Key: FAAS_CAPABILITY_TOKEN
-            Value: ${env(FAAS_CAPABILITY_TOKEN)}
-          - Key: FAAS_CAPABILITY_INDEXER_URL
-            Value: ${env(FAAS_CAPABILITY_INDEXER_URL)}
-          - Key: FAAS_CAPABILITY_PLAYLIST_BUILD_URL
-            Value: ${env(FAAS_CAPABILITY_PLAYLIST_BUILD_URL)}
-          - Key: FAAS_CAPABILITY_VIDEO_PROCESSING_URL
-            Value: ${env(FAAS_CAPABILITY_VIDEO_PROCESSING_URL)}
-          - Key: FAAS_CAPABILITY_TRIGGER_TIMEOUT
-            Value: ${env(FAAS_CAPABILITY_TRIGGER_TIMEOUT)}
-          - Key: FAAS_CAPABILITY_TRIGGER_BATCH_SIZE
-            Value: ${env(FAAS_CAPABILITY_TRIGGER_BATCH_SIZE)}
           - Key: SECRET_KEY
             Value: ${env(SECRET_KEY)}
           - Key: DOMAIN_NAME
@@ -95,25 +78,18 @@ resources:
             Value: "/tmp/previews"
           - Key: TMP_DIR
             Value: "/tmp/zou"
-          - Key: ENABLE_JOB_QUEUE
-            Value: "False"
-          - Key: PROMETHEUS_METRICS_ENABLED
-            Value: "False"
       replicaLimit:
         MaxInstance: 10
       triggers:
-        - TriggerName: apig-trigger-dev
+        - TriggerName: apig-trigger-video-processing
           TriggerType: apig
-          GatewayId: ${env(DEV_APIG_GATEWAY_ID)}
-          ServiceName: "service-zou-dev"
-          UpstreamName: "upstream-zou-dev"
-          RouteName: dev
-          Path: "/"
+          GatewayId: ${env(CAPABILITY_APIG_GATEWAY_ID)}
+          ServiceName: "service-zou-capability-video-processing"
+          UpstreamName: "upstream-zou-capability-video-processing"
+          RouteName: "capability-video-processing"
+          Path: "/capabilities/video-processing"
           Method:
             - POST
             - GET
-            - PUT
-            - DELETE
             - HEAD
             - OPTIONS
-            - CONNECT

@@ -20,6 +20,7 @@ from zou.app.blueprints.playlists.schemas import (
     TempPlaylistCreateSchema,
 )
 from zou.app.services import (
+    capability_service,
     entities_service,
     notifications_service,
     playlists_service,
@@ -33,6 +34,10 @@ from zou.app.services.exception import BuildJobNotFoundException
 from zou.app.stores import file_store, queue_store
 from zou.app.utils import fs, permissions, validation
 from zou.utils.movie import EncodingParameters
+
+
+def _is_faas_profile():
+    return os.getenv("ZOU_APP_PROFILE") == "faas"
 
 
 class ProjectPlaylistsResource(Resource, ArgsMixin):
@@ -512,6 +517,24 @@ class BuildPlaylistMovieResource(Resource, ArgsMixin):
         ]
 
         job = playlists_service.start_build_job(playlist)
+        if _is_faas_profile():
+            capability_job, trigger = capability_service.create_job(
+                "playlist-build",
+                "build_playlist_movie",
+                payload={
+                    "playlist_id": playlist["id"],
+                    "build_job_id": job["id"],
+                    "full": full,
+                    "width": width,
+                    "height": height,
+                    "fps": fps,
+                },
+                requested_by=persons_service.get_current_user()["id"],
+            )
+            job["capability_job_id"] = capability_job["id"]
+            job["capability_trigger"] = trigger
+            return job
+
         if config.ENABLE_JOB_QUEUE:
             remote = config.ENABLE_JOB_QUEUE_REMOTE
             # remote worker can not access files local to the web app

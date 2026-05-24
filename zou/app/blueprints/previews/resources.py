@@ -23,6 +23,7 @@ from zou.app.services import (
     deletion_service,
     entities_service,
     files_service,
+    capability_service,
     names_service,
     persons_service,
     projects_service,
@@ -93,6 +94,10 @@ ALLOWED_FILE_EXTENSION = {
     "zip",
 }
 ALLOWED_PREVIEW_BACKGROUND_EXTENSION = {"hdr"}
+
+
+def _is_faas_profile():
+    return os.getenv("ZOU_APP_PROFILE") == "faas"
 
 
 def send_standard_file(
@@ -258,6 +263,31 @@ class BaseNewPreviewFilePicture:
             tmp_folder, preview_file_id, uploaded_file
         )
         save_source_file = config.PREVIEW_SAVE_SOURCE_FILE
+        if _is_faas_profile():
+            try:
+                file_store.add_movie(
+                    "source", preview_file_id, uploaded_movie_path
+                )
+            finally:
+                try:
+                    os.remove(uploaded_movie_path)
+                except FileNotFoundError:
+                    pass
+            job, _trigger = capability_service.create_job(
+                "video-processing",
+                "normalize_movie",
+                payload={
+                    "preview_file_id": preview_file_id,
+                    "movie_id": preview_file_id,
+                    "prefix": "source",
+                    "extension": uploaded_file.filename.split(".")[-1].lower(),
+                    "normalize": normalize,
+                    "add_source_to_file_store": False,
+                },
+                requested_by=persons_service.get_current_user()["id"],
+            )
+            return job["id"]
+
         if normalize and config.ENABLE_JOB_QUEUE and not no_job:
             queue_store.job_queue.enqueue(
                 preview_files_service.prepare_and_store_movie,
@@ -346,7 +376,9 @@ class BaseNewPreviewFilePicture:
         elif extension in ALLOWED_MOVIE_EXTENSION:
             try:
                 normalize = self.get_bool_parameter("normalize", "true")
-                self.save_movie_preview(instance_id, uploaded_file, normalize)
+                processing_job_id = self.save_movie_preview(
+                    instance_id, uploaded_file, normalize
+                )
             except Exception as e:
                 current_app.logger.error(e, exc_info=1)
                 current_app.logger.error("Normalization failed.")
@@ -356,9 +388,16 @@ class BaseNewPreviewFilePicture:
                 if abort_on_failed:
                     raise WrongParameterException("Normalization failed.")
                 return None
+            update_data = {
+                "extension": "mp4",
+                "original_name": original_file_name,
+            }
+            if _is_faas_profile() and processing_job_id:
+                update_data["data"] = {
+                    "video_processing_job_id": processing_job_id
+                }
             preview_file = preview_files_service.update_preview_file(
-                instance_id,
-                {"extension": "mp4", "original_name": original_file_name},
+                instance_id, update_data
             )
         elif extension in ALLOWED_FILE_EXTENSION:
             self.save_file_preview(instance_id, uploaded_file, extension)
