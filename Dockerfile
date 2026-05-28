@@ -20,6 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         tzdata \
     && rm -rf /var/lib/apt/lists/*
 
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+
+ENV PIP_INDEX_URL=${PIP_INDEX_URL}
+
 WORKDIR /opt/application
 
 COPY setup.py setup.cfg README.rst /opt/application/
