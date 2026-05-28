@@ -13,6 +13,7 @@ from zou.app.blueprints.persons import blueprint as persons_blueprint
 from zou.app.blueprints.playlists.slim import blueprint as playlists_blueprint
 from zou.app.blueprints.previews.slim import blueprint as previews_blueprint
 from zou.app.blueprints.projects import blueprint as projects_blueprint
+from zou.app.blueprints.shots import blueprint as shots_blueprint
 from zou.app.blueprints.tasks import blueprint as tasks_blueprint
 from zou.app.blueprints.user import blueprint as user_blueprint
 from zou.app.blueprints.auth.slim import blueprint as auth_blueprint
@@ -45,6 +46,7 @@ def configure_api_routes(app):
     app.register_blueprint(playlists_blueprint)
     app.register_blueprint(previews_blueprint)
     app.register_blueprint(projects_blueprint)
+    app.register_blueprint(shots_blueprint)
     app.register_blueprint(tasks_blueprint)
     app.register_blueprint(user_blueprint)
     return app
