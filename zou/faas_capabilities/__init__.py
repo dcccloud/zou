@@ -1,0 +1,1 @@
+"""Standalone FaaS capability entrypoints."""

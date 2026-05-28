@@ -1,0 +1,134 @@
+from flask import Blueprint
+
+from zou.app.utils.api import configure_api_from_blueprint
+
+from zou.app.blueprints.previews.resources import (
+    AddTaskBatchCommentResource,
+    AddTasksBatchCommentResource,
+    AttachmentThumbnailResource,
+    CreateOrganisationThumbnailResource,
+    CreatePersonThumbnailResource,
+    CreatePreviewFileFromUrlResource,
+    CreatePreviewFilePictureResource,
+    CreateProjectThumbnailResource,
+    OrganisationThumbnailResource,
+    PersonThumbnailResource,
+    PreviewFileDownloadResource,
+    PreviewFileLowMovieResource,
+    PreviewFileMovieDownloadResource,
+    PreviewFileMovieResource,
+    PreviewFileOriginalResource,
+    PreviewFilePreviewResource,
+    PreviewFileResource,
+    PreviewFileThumbnailResource,
+    PreviewFileThumbnailSquareResource,
+    PreviewFileTileResource,
+    ProjectThumbnailResource,
+    RunningPreviewFiles,
+    SetMainPreviewResource,
+    UpdateAnnotationsResource,
+    UpdatePreviewPositionResource,
+)
+
+routes = [
+    ("/data/playlists/preview-files/running", RunningPreviewFiles),
+    (
+        "/pictures/preview-files/<instance_id>",
+        CreatePreviewFilePictureResource,
+    ),
+    (
+        "/pictures/preview-files/<instance_id>/from-url",
+        CreatePreviewFileFromUrlResource,
+    ),
+    (
+        "/actions/tasks/<task_id>/batch-comment",
+        AddTaskBatchCommentResource,
+    ),
+    (
+        "/actions/tasks/batch-comment",
+        AddTasksBatchCommentResource,
+    ),
+    (
+        "/movies/originals/preview-files/<instance_id>.mp4",
+        PreviewFileMovieResource,
+    ),
+    (
+        "/movies/originals/preview-files/<instance_id>/download",
+        PreviewFileMovieDownloadResource,
+    ),
+    (
+        "/movies/low/preview-files/<instance_id>.mp4",
+        PreviewFileLowMovieResource,
+    ),
+    (
+        "/pictures/thumbnails/preview-files/<instance_id>.png",
+        PreviewFileThumbnailResource,
+    ),
+    (
+        "/pictures/thumbnails/attachment-files/<attachment_file_id>.png",
+        AttachmentThumbnailResource,
+    ),
+    (
+        "/pictures/thumbnails-square/preview-files/<instance_id>.png",
+        PreviewFileThumbnailSquareResource,
+    ),
+    (
+        "/pictures/originals/preview-files/<instance_id>.png",
+        PreviewFileOriginalResource,
+    ),
+    (
+        "/pictures/originals/preview-files/<instance_id>.<extension>",
+        PreviewFileResource,
+    ),
+    (
+        "/pictures/originals/preview-files/<instance_id>/download",
+        PreviewFileDownloadResource,
+    ),
+    (
+        "/pictures/previews/preview-files/<instance_id>.png",
+        PreviewFilePreviewResource,
+    ),
+    (
+        "/movies/tiles/preview-files/<instance_id>.png",
+        PreviewFileTileResource,
+    ),
+    (
+        "/pictures/thumbnails/organisations/<instance_id>",
+        CreateOrganisationThumbnailResource,
+    ),
+    (
+        "/pictures/thumbnails/organisations/<instance_id>.png",
+        OrganisationThumbnailResource,
+    ),
+    (
+        "/pictures/thumbnails/persons/<instance_id>",
+        CreatePersonThumbnailResource,
+    ),
+    (
+        "/pictures/thumbnails/persons/<instance_id>.png",
+        PersonThumbnailResource,
+    ),
+    (
+        "/pictures/thumbnails/projects/<instance_id>",
+        CreateProjectThumbnailResource,
+    ),
+    (
+        "/pictures/thumbnails/projects/<instance_id>.png",
+        ProjectThumbnailResource,
+    ),
+    (
+        "/actions/preview-files/<preview_file_id>/set-main-preview",
+        SetMainPreviewResource,
+    ),
+    (
+        "/actions/preview-files/<preview_file_id>/update-position",
+        UpdatePreviewPositionResource,
+    ),
+    (
+        "/actions/preview-files/<preview_file_id>/update-annotations",
+        UpdateAnnotationsResource,
+    ),
+]
+
+blueprint = Blueprint("previews_slim", "previews_slim")
+api = configure_api_from_blueprint(blueprint, routes)

@@ -39,13 +39,7 @@ from zou.app.stores import auth_tokens_store
 from zou.app.utils import date_helpers, emails
 from zou.app.utils.email_i18n import get_email_translation
 
-from fido2.webauthn import (
-    PublicKeyCredentialUserEntity,
-)
 from sqlalchemy.orm.attributes import flag_modified
-
-from fido2.utils import bytes2int, int2bytes
-from fido2.webauthn import AttestedCredentialData
 
 
 def check_auth(
@@ -520,6 +514,9 @@ def send_email_otp(person):
 def get_fido_attested_credential_data_from_person(
     fido_person_credentials=None,
 ):
+    from fido2.utils import int2bytes
+    from fido2.webauthn import AttestedCredentialData
+
     credentials = []
     if isinstance(fido_person_credentials, list):
         for credential in fido_person_credentials:
@@ -545,6 +542,8 @@ def pre_register_fido(person_id):
     """
     Pre-register FIDO device for a person.
     """
+    from fido2.webauthn import PublicKeyCredentialUserEntity
+
     person = Person.get(person_id)
     options, state = current_app.extensions["fido_server"].register_begin(
         PublicKeyCredentialUserEntity(
@@ -566,6 +565,8 @@ def register_fido(person_id, registration_response, device_name):
     """
     Register FIDO device for a person.
     """
+    from fido2.utils import bytes2int
+
     person = Person.get(person_id)
     try:
         state = session.pop("fido-state-%s" % person.id)

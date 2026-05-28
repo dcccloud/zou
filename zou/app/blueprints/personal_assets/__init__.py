@@ -27,7 +27,7 @@ api = configure_api_from_blueprint(
     blueprint,
     routes,
     decorators=[
-        jwt_required(),
         permissions.require_person,
+        jwt_required(),
     ],
 )

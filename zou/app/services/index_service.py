@@ -1,5 +1,6 @@
+import os
+
 from zou.app import app
-from zou.app.indexer import indexing
 
 from zou.app.models.entity import Entity
 from zou.app.models.entity_type import EntityType
@@ -15,11 +16,34 @@ from zou.app.services import (
 )
 
 
+def _indexing():
+    from zou.app.indexer import indexing
+
+    return indexing
+
+
+def _is_faas_profile():
+    return os.getenv("ZOU_APP_PROFILE") == "faas"
+
+
+def _enqueue_indexer_job(action, payload=None):
+    from zou.app.services import capability_service
+
+    job, trigger = capability_service.create_job(
+        "indexer", action, payload=payload or {}
+    )
+    if trigger["triggered"]:
+        app.logger.info(
+            "Triggered indexer capability for job %s", job["id"]
+        )
+    return {"queued": True, "job_id": job["id"]}
+
+
 def get_index(index_name):
     """
     Retrieve meilisearch index from disk. It is required to perform any operations.
     """
-    return indexing.get_index(index_name)
+    return _indexing().get_index(index_name)
 
 
 def get_asset_index():
@@ -44,6 +68,9 @@ def reset_index():
     Delete index and rebuild it by looping on all the assets listed in the
     database.
     """
+    if _is_faas_profile():
+        return _enqueue_indexer_job("reset_index")
+
     reset_asset_index()
     reset_person_index()
     reset_shot_index()
@@ -60,6 +87,7 @@ def reset_entry_index(
     Clear and rebuild index for given parameters: folder name of the index,
     func to get entries to index, func to index a given entry.
     """
+    indexing = _indexing()
     index = indexing.create_index(
         index_name, searchable_fields, filterable_fields
     )
@@ -119,6 +147,7 @@ def search_assets(query, project_ids=None, limit=3, offset=0):
     """
     if project_ids is None:
         project_ids = []
+    indexing = _indexing()
     index = get_asset_index()
 
     results = indexing.search(
@@ -194,6 +223,7 @@ def search_shots(query, project_ids=None, limit=3, offset=0):
     """
     if project_ids is None:
         project_ids = []
+    indexing = _indexing()
     index = get_shot_index()
 
     results = indexing.search(
@@ -295,6 +325,7 @@ def search_persons(query, limit=3, offset=0):
     Perform a search on the index. The query is a simple string. The result is
     a list of persons (3 results maximum by default).
     """
+    indexing = _indexing()
     index = get_person_index()
     results = indexing.search(index, query, limit=limit, offset=offset)
     if not results:
@@ -320,6 +351,10 @@ def index_asset(asset):
     """
     Register asset into the index.
     """
+    if _is_faas_profile():
+        return _enqueue_indexer_job("index_asset", {"asset_id": str(asset.id)})
+
+    indexing = _indexing()
     try:
         index = get_asset_index()
         document = prepare_asset(asset)
@@ -336,6 +371,12 @@ def index_person(person):
     """
     Register person into the index.
     """
+    if _is_faas_profile():
+        return _enqueue_indexer_job(
+            "index_person", {"person_id": str(person.id)}
+        )
+
+    indexing = _indexing()
     try:
         index = get_person_index()
         document = prepare_person(person)
@@ -352,6 +393,10 @@ def index_shot(shot):
     """
     Register shot into the index.
     """
+    if _is_faas_profile():
+        return _enqueue_indexer_job("index_shot", {"shot_id": str(shot.id)})
+
+    indexing = _indexing()
     try:
         index = get_shot_index()
         document = prepare_shot(shot)
@@ -456,6 +501,12 @@ def remove_asset_index(asset_id):
     """
     Remove document matching given asset id from asset index.
     """
+    if _is_faas_profile():
+        return _enqueue_indexer_job(
+            "remove_asset", {"asset_id": str(asset_id)}
+        )
+
+    indexing = _indexing()
     try:
         return indexing.remove_document(get_asset_index(), asset_id)
     except indexing.IndexerNotInitializedError:
@@ -469,6 +520,12 @@ def remove_person_index(person_id):
     """
     Remove document matching given person id from person index.
     """
+    if _is_faas_profile():
+        return _enqueue_indexer_job(
+            "remove_person", {"person_id": str(person_id)}
+        )
+
+    indexing = _indexing()
     try:
         return indexing.remove_document(get_person_index(), person_id)
     except indexing.IndexerNotInitializedError:
@@ -482,6 +539,10 @@ def remove_shot_index(shot_id):
     """
     Remove document matching given shot id from shot index.
     """
+    if _is_faas_profile():
+        return _enqueue_indexer_job("remove_shot", {"shot_id": str(shot_id)})
+
+    indexing = _indexing()
     try:
         return indexing.remove_document(get_shot_index(), shot_id)
     except indexing.IndexerNotInitializedError:

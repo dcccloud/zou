@@ -1,0 +1,95 @@
+edition: 3.0.0
+name: zou-capability-indexer
+access: "default-volcano"
+
+vars:
+  region: "cn-beijing"
+  functionName: "zou-capability-indexer"
+
+resources:
+  capability_indexer:
+    component: volcano-vefaas
+    props:
+      common:
+        Region: ${vars.region}
+      function:
+        Name: ${vars.functionName}
+        Description: "Zou indexer capability"
+        ExclusiveMode: true
+        RequestTimeout: 10800
+        AsyncConfig: # 异步配置
+          EnableAsyncTask: true # 开启异步任务
+        Runtime: native/v1
+        SourceType: image
+        Source: ${env(CAPABILITY_IMAGE)}
+        MemoryMB: 8192
+        Processor: cpu
+        Port: 8000
+        Envs:
+          - Key: PORT
+            Value: "8000"
+          - Key: ZOU_APP_PROFILE
+            Value: "capability"
+          - Key: FAAS_CAPABILITY_NAME
+            Value: "indexer"
+          - Key: FAAS_CAPABILITY_TOKEN
+            Value: ${env(FAAS_CAPABILITY_TOKEN)}
+          - Key: DB_HOST
+            Value: ${env(DB_HOST)}
+          - Key: DB_PORT
+            Value: ${env(DB_PORT)}
+          - Key: DB_DATABASE
+            Value: ${env(DB_DATABASE)}
+          - Key: DB_USERNAME
+            Value: ${env(DB_USERNAME)}
+          - Key: DB_PASSWORD
+            Value: ${env(DB_PASSWORD)}
+          - Key: KV_HOST
+            Value: ${env(KV_HOST)}
+          - Key: KV_PORT
+            Value: ${env(KV_PORT)}
+          - Key: KV_USERNAME
+            Value: ${env(KV_USERNAME)}
+          - Key: KV_PASSWORD
+            Value: ${env(KV_PASSWORD)}
+          - Key: KV_CAPABILITY_JOBS_DB_INDEX
+            Value: ${env(KV_CAPABILITY_JOBS_DB_INDEX)}
+          - Key: SECRET_KEY
+            Value: ${env(SECRET_KEY)}
+          - Key: DOMAIN_NAME
+            Value: ${env(DOMAIN_NAME)}
+          - Key: DOMAIN_PROTOCOL
+            Value: ${env(DOMAIN_PROTOCOL)}
+          - Key: MAIL_ENABLED
+            Value: ${env(MAIL_ENABLED)}
+          - Key: FS_BACKEND
+            Value: ${env(FS_BACKEND)}
+          - Key: FS_S3_REGION
+            Value: ${env(FS_S3_REGION)}
+          - Key: FS_S3_ENDPOINT
+            Value: ${env(FS_S3_ENDPOINT)}
+          - Key: FS_S3_ACCESS_KEY
+            Value: ${env(FS_S3_ACCESS_KEY)}
+          - Key: FS_S3_SECRET_KEY
+            Value: ${env(FS_S3_SECRET_KEY)}
+          - Key: FS_BUCKET_PREFIX
+            Value: ${env(FS_BUCKET_PREFIX)}
+          - Key: PREVIEW_FOLDER
+            Value: "/tmp/previews"
+          - Key: TMP_DIR
+            Value: "/tmp/zou"
+      replicaLimit:
+        MaxInstance: 10
+      triggers:
+        - TriggerName: apig-trigger-indexer
+          TriggerType: apig
+          GatewayId: ${env(CAPABILITY_APIG_GATEWAY_ID)}
+          ServiceName: "service-zou-capability-indexer"
+          UpstreamName: "upstream-zou-capability-indexer"
+          RouteName: "capability-indexer"
+          Path: "/capabilities/indexer"
+          Method:
+            - POST
+            - GET
+            - HEAD
+            - OPTIONS

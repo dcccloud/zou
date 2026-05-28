@@ -3,7 +3,15 @@
 .vscode
 tests
 specs
-deploy_script
+deploy_script/**
+!deploy_script/huoshan/
+!deploy_script/huoshan/capabilities/
+!deploy_script/huoshan/capabilities/indexer/
+!deploy_script/huoshan/capabilities/indexer/run.sh
+!deploy_script/huoshan/capabilities/playlist-build/
+!deploy_script/huoshan/capabilities/playlist-build/run.sh
+!deploy_script/huoshan/capabilities/video-processing/
+!deploy_script/huoshan/capabilities/video-processing/run.sh
 conftest.py
 UNTESTED_ROUTES.md
 RELEASE.md

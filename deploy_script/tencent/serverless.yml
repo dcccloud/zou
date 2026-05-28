@@ -1,0 +1,38 @@
+#组件信息
+component: scf # 组件名称，本例中为scf组件
+name: asr_provider # 实例名称
+#组件参数
+inputs:
+  name: asr_provider #函数名称
+  description: asr_provider function. 
+  type: web #函数类型
+  image: # 镜像配置
+    imageType: personal # 镜像类型：personal - 个人，enterprise - 企业版，public - 镜像模板
+    imageUrl: ccr.ccs.tencentyun.com/dcc-cloud/asr_provider:0.0.1
+    command: python3
+    args: -u /usr/src/app.py
+  namespace: default
+  region: ap-guangzhou
+  memorySize: 1280
+  timeout: 300
+  environment: #  环境变量
+    variables: #  环境变量对象
+      KEYID: ${env:KEYID}
+      KEYSECRET: ${env:KEYSECRET}
+      XF_APPID: ${env:XF_APPID}
+      XF_SECRET_KEY: ${env:XF_SECRET_KEY}
+      SecretId: ${env:TENCENT_SECRET_ID}
+      SecretKey: ${env:TENCENT_SECRET_KEY}
+      OSS_ENDPOINT: oss-cn-hangzhou.aliyuncs.com
+      COS_REGION: ap-guangzhou
+      CLOUD_PROVIDER: COS
+      PORT: 9000
+  events:
+    - apigw:
+        serviceId: service-p8a9o6um
+        serviceName: serverless
+        parameters:
+          endpoints:
+            - path: /
+              method: POST
+              serviceTimeout: 300

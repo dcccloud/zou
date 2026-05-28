@@ -8,7 +8,10 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_RETRIES=10 \
     LANG=C.UTF-8 \
     TZ=Asia/Shanghai \
-    PORT=8000
+    PORT=8000 \
+    ZOU_APP_PROFILE=capability \
+    GUNICORN_WORKERS=1 \
+    GUNICORN_TIMEOUT=600
 
 RUN set -eux; \
     sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
@@ -25,21 +28,11 @@ RUN set -eux; \
         tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
-
-ENV PIP_INDEX_URL=${PIP_INDEX_URL}
-
 WORKDIR /opt/application
 
 COPY setup.py setup.cfg README.rst /opt/application/
 COPY zou /opt/application/zou
-COPY run.sh /opt/application/run.sh
 
 RUN pip install --no-cache-dir .
 
 RUN mkdir -p /opt/application/previews /opt/application/tmp /opt/application/plugins
-
-EXPOSE 8000
-
-RUN chmod +x /opt/application/run.sh
-CMD /opt/application/run.sh

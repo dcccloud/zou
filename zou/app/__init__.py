@@ -1,8 +1,8 @@
+import os
 import traceback
 import uuid
 
 from flask import Flask, jsonify, current_app, request
-from flasgger import Swagger
 from flask_jwt_extended import JWTManager
 from flask_principal import (
     Principal,
@@ -24,10 +24,7 @@ from meilisearch.errors import (
 )
 
 from zou.app import config
-from zou.app import swagger as swagger_module
-from zou.app.swagger import configure_openapi_route
 from zou.app.stores import auth_tokens_store, config_store, file_store
-from zou.app.indexer import indexing
 from zou.app.services.exception import (
     ModelWithRelationsDeletionException,
     PersonNotFoundException,
@@ -45,8 +42,10 @@ from zou.app.utils.flask import (
     wrong_auth_handler,
 )
 
-from zou.app.utils.saml import saml_client_for
-from zou.app.utils.fido import get_fido_server
+APP_PROFILE = os.getenv("ZOU_APP_PROFILE", "full")
+IS_FAAS_PROFILE = APP_PROFILE == "faas"
+IS_CAPABILITY_PROFILE = APP_PROFILE == "capability"
+IS_REDUCED_PROFILE = IS_FAAS_PROFILE or IS_CAPABILITY_PROFILE
 
 app = Flask(__name__)
 app.json = ORJSONProvider(app)
@@ -67,21 +66,31 @@ Principal(app)  # Permissions
 cache.cache.init_app(app)  # Function caching
 mail = Mail()
 mail.init_app(app)  # To send emails
-swagger = Swagger(
-    app,
-    template=swagger_module.swagger_template,
-    config=swagger_module.swagger_config,
-)
-configure_openapi_route(app, swagger)
 
+if not IS_REDUCED_PROFILE:
+    from flasgger import Swagger
+    from zou.app import swagger as swagger_module
+    from zou.app.swagger import configure_openapi_route
+    from zou.app.utils.saml import saml_client_for
+    from zou.app.utils.fido import get_fido_server
+    from zou.app.indexer import indexing
 
-if config.SAML_ENABLED:
-    app.extensions["saml_client"] = saml_client_for(config.SAML_METADATA_URL)
+    swagger = Swagger(
+        app,
+        template=swagger_module.swagger_template,
+        config=swagger_module.swagger_config,
+    )
+    configure_openapi_route(app, swagger)
 
-app.extensions["fido_server"] = get_fido_server()
+    if config.SAML_ENABLED:
+        app.extensions["saml_client"] = saml_client_for(
+            config.SAML_METADATA_URL
+        )
 
-if config.INDEXER["key"] is not None:
-    app.extensions["indexer_client"] = indexing.init_client()
+    app.extensions["fido_server"] = get_fido_server()
+
+    if config.INDEXER["key"] is not None:
+        app.extensions["indexer_client"] = indexing.init_client()
 
 
 @app.teardown_appcontext
@@ -281,9 +290,16 @@ def configure_auth():
 
 
 def load_api(app):
-    from zou.app import api
+    if IS_CAPABILITY_PROFILE:
+        pass
+    elif IS_FAAS_PROFILE:
+        from zou.app import faas_api
 
-    api.configure(app)
+        faas_api.configure(app)
+    else:
+        from zou.app import api
+
+        api.configure(app)
 
     fs.mkdir_p(app.config["TMP_DIR"])
     configure_auth()
