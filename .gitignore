@@ -79,6 +79,9 @@ celerybeat-schedule
 # dotenv
 .env
 
+# Serverless Devs local cache
+.s/
+
 # virtualenv
 venv/
 .venv/

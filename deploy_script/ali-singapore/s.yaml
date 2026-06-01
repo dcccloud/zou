@@ -1,0 +1,77 @@
+edition: 3.0.0
+name: zou-backend-singapore
+access: 'default-ali-singapore'
+
+vars:
+  region: 'ap-southeast-1'
+  functionName: 'zou-backend-func'
+  customDomainName: ${env(FC_CUSTOM_DOMAIN_NAME)}
+  customDomainProtocol: ${env(FC_CUSTOM_DOMAIN_PROTOCOL)}
+
+resources:
+  zou-backend:
+    component: fc3
+    props:
+      region: ${vars.region}
+      functionName: ${vars.functionName}
+      description: 'Zou (Kitsu) backend API'
+      runtime: custom-container
+      memorySize: 32768
+      cpu: 8
+      diskSize: 512
+      customContainerConfig:
+        image: 'raven-sg-registry-vpc.ap-southeast-1.cr.aliyuncs.com/dcc-cloud/zou-backend:0.0.2'
+        port: 8000
+      instanceConcurrency: 10
+      timeout: 9000
+      environmentVariables:
+        PORT: '8000'
+        DB_HOST: ${env(DB_HOST)}
+        DB_PORT: ${env(DB_PORT)}
+        DB_DATABASE: ${env(DB_DATABASE)}
+        DB_USERNAME: ${env(DB_USERNAME)}
+        DB_PASSWORD: ${env(DB_PASSWORD)}
+        KV_HOST: ${env(KV_HOST)}
+        KV_PORT: ${env(KV_PORT)}
+        KV_USERNAME: ${env(KV_USERNAME)}
+        KV_PASSWORD: ${env(KV_PASSWORD)}
+        KV_AUTH_TOKEN_BLACKLIST_KV_INDEX: ${env(KV_AUTH_TOKEN_BLACKLIST_KV_INDEX)}
+        KV_MEMOIZE_DB_INDEX: ${env(KV_MEMOIZE_DB_INDEX)}
+        KV_EVENTS_DB_INDEX: ${env(KV_EVENTS_DB_INDEX)}
+        KV_JOB_DB_INDEX: ${env(KV_JOB_DB_INDEX)}
+        KV_CONFIG_DB_INDEX: ${env(KV_CONFIG_DB_INDEX)}
+        ZOU_APP_PROFILE: 'faas'
+        SECRET_KEY: ${env(SECRET_KEY)}
+        DOMAIN_NAME: ${vars.customDomainName}
+        DOMAIN_PROTOCOL: ${vars.customDomainProtocol}
+        MAIL_ENABLED: 'False'
+        FS_BACKEND: 's3'
+        FS_S3_REGION: 'oss-ap-southeast-3'
+        FS_S3_ENDPOINT: 'https://oss-ap-southeast-3.aliyuncs.com'
+        FS_S3_ACCESS_KEY: ${env(FS_S3_ACCESS_KEY)}
+        FS_S3_SECRET_KEY: ${env(FS_S3_SECRET_KEY)}
+        FS_BUCKET_PREFIX: ${env(FS_BUCKET_PREFIX)}
+        PREVIEW_FOLDER: '/tmp/previews'
+        TMP_DIR: '/tmp/zou'
+        ENABLE_JOB_QUEUE: 'False'
+        PROMETHEUS_METRICS_ENABLED: 'False'
+      internetAccess: true
+      role: "acs:ram::5533279936379346:role/aliyunfcdefaultrole"
+      vpcConfig:
+        vpcId: vpc-t4nfd2cqbydugb0lv42f3
+        securityGroupId: sg-t4n6ksw3m3u2gp1oq7vk
+        vSwitchIds:
+          - vsw-t4ng3ssnuzb16nj9ck5dv
+      customDomain:
+        domainName: ${vars.customDomainName}
+        protocol: ${vars.customDomainProtocol}
+        route:
+          path: /*
+          qualifier: LATEST
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - HEAD
+            - OPTIONS
