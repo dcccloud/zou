@@ -30,13 +30,17 @@ def init():
             password=config.KEY_VALUE_STORE["password"],
             decode_responses=True,
         )
-        publisher_store.get("test")
-        socketio = SocketIO(
-            message_queue=get_redis_url(config.KV_EVENTS_DB_INDEX),
-            cors_allowed_origins=[],
-            cors_credentials=False,
-        )
-    except redis.ConnectionError:
-        pass
+        publisher_store.ping()
+    except redis.RedisError as exception:
+        raise RuntimeError(
+            "Redis event publisher is unavailable. "
+            "Zou will not silently disable event publishing."
+        ) from exception
+
+    socketio = SocketIO(
+        message_queue=get_redis_url(config.KV_EVENTS_DB_INDEX),
+        cors_allowed_origins=[],
+        cors_credentials=False,
+    )
 
     return socketio

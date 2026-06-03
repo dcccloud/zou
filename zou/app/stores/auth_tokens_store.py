@@ -1,4 +1,3 @@
-import sys
 import redis
 
 from zou.app import config
@@ -14,10 +13,11 @@ try:
         decode_responses=True,
     )
     revoked_tokens_store.ping()
-except redis.ConnectionError:
-    revoked_tokens_store = None
-    if "pytest" not in sys.modules:
-        print("Cannot access to the required Redis instance")
+except redis.RedisError as exception:
+    raise RuntimeError(
+        "Redis auth token store is unavailable. "
+        "Zou cannot validate revoked tokens without it."
+    ) from exception
 
 
 def add(key, token, ttl=None):

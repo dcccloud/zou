@@ -2,14 +2,25 @@ import os
 from pathlib import Path
 
 import flask_bcrypt
+import fakeredis
 import pytest
+import redis
 
 collect_ignore = ["plugins", "zou/plugin_template"]
 
 # Must be set before zou.app is imported.
-os.environ.setdefault("CACHE_TYPE", "simple")
+os.environ.setdefault("CACHE_TYPE", "redis")
 os.environ.setdefault("BCRYPT_LOG_ROUNDS", "4")
 os.environ.setdefault("DB_POOL_PRE_PING", "false")
+
+if os.environ.get("ZOU_TEST_USE_REAL_REDIS") != "1":
+    os.environ["KV_HOST"] = "localhost"
+    os.environ["KV_PORT"] = "6379"
+    os.environ["KV_USERNAME"] = ""
+    os.environ["KV_PASSWORD"] = ""
+    redis.Redis = fakeredis.FakeRedis
+    redis.StrictRedis = fakeredis.FakeStrictRedis
+    redis.from_url = fakeredis.FakeRedis.from_url
 
 _REAL_BCRYPT_FILES = {"test_auth_route.py", "test_auth_service.py"}
 

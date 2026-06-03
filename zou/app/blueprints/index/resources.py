@@ -80,9 +80,9 @@ class BaseStatusResource(Resource):
                 password=config.KEY_VALUE_STORE["password"],
                 decode_responses=True,
             )
-            store.get("test")
+            store.ping()
             return True
-        except redis.ConnectionError:
+        except redis.RedisError:
             return False
 
     def _check_event_stream(self):

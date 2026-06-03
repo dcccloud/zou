@@ -1,5 +1,3 @@
-import sys
-
 import redis
 
 from zou.app import config
@@ -21,40 +19,28 @@ try:
         decode_responses=True,
     )
     config_store.ping()
-except redis.ConnectionError:
-    config_store = None
-    if "pytest" not in sys.modules:
-        print("Cannot access to the required Redis instance")
+except redis.RedisError as exception:
+    raise RuntimeError(
+        "Redis config store is unavailable. "
+        "Zou cannot synchronize runtime config without it."
+    ) from exception
 
 
 def _get_redis_raw(key):
-    if config_store is not None:
-        try:
-            return config_store.get(key)
-        except redis.ConnectionError:
-            pass
-    return None
+    return config_store.get(key)
 
 
 def _get(key, fallback):
-    if config_store is not None:
-        try:
-            value = config_store.get(key)
-            if value is not None:
-                return value
-        except redis.ConnectionError:
-            pass
+    value = config_store.get(key)
+    if value is not None:
+        return value
     return fallback
 
 
 def _sync(key, env_value):
-    if config_store is not None:
-        try:
-            current = config_store.get(key)
-            if current is None or str(current) != str(env_value):
-                config_store.set(key, env_value)
-        except redis.ConnectionError:
-            pass
+    current = config_store.get(key)
+    if current is None or str(current) != str(env_value):
+        config_store.set(key, env_value)
     return env_value
 
 

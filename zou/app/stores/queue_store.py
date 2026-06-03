@@ -1,5 +1,4 @@
 import redis
-import sys
 
 from rq import Queue
 from zou.app import config
@@ -15,14 +14,12 @@ try:
             password=config.KEY_VALUE_STORE["password"],
             decode_responses=True,
         )
-        queue_store.get("test")
-except redis.ConnectionError:
-    try:
-        import fakeredis
-
-        queue_store = fakeredis.FakeStrictRedis()
-    except Exception:
-        sys.exit(1)
+        queue_store.ping()
+except redis.RedisError as exception:
+    raise RuntimeError(
+        "Redis job queue store is unavailable. "
+        "Zou will not fall back to an in-memory queue."
+    ) from exception
 
 if config.ENABLE_JOB_QUEUE:
     job_queue = Queue(connection=queue_store)

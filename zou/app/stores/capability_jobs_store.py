@@ -1,6 +1,5 @@
 import datetime
 import json
-import sys
 import uuid
 
 import redis
@@ -26,10 +25,11 @@ try:
         decode_responses=True,
     )
     capability_jobs_store.ping()
-except redis.ConnectionError:
-    capability_jobs_store = None
-    if "pytest" not in sys.modules:
-        print("Cannot access to the required Redis instance")
+except redis.RedisError as exception:
+    raise RuntimeError(
+        "Redis capability jobs store is unavailable. "
+        "Zou cannot persist capability job state without it."
+    ) from exception
 
 
 def _now():
