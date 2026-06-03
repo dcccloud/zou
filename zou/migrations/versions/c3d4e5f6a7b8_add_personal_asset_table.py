@@ -1,6 +1,6 @@
 """add personal_asset table
 
-Revision ID: b2c3d4e5f6a7
+Revision ID: c3d4e5f6a7b8
 Revises: 8d42b9e1f7a3
 Create Date: 2026-05-12 12:00:00.000000
 
@@ -12,7 +12,7 @@ import sqlalchemy_utils
 
 
 # revision identifiers, used by Alembic.
-revision = "b2c3d4e5f6a7"
+revision = "c3d4e5f6a7b8"
 down_revision = "8d42b9e1f7a3"
 branch_labels = None
 depends_on = None
@@ -30,10 +30,16 @@ def upgrade():
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("file_name", sa.String(length=250), nullable=True),
         sa.Column("extension", sa.String(length=10), nullable=True),
+        sa.Column("mime_type", sa.String(length=255), nullable=True),
         sa.Column("file_size", sa.BigInteger(), nullable=True),
+        sa.Column("file_hash", sa.String(length=64), nullable=True),
+        sa.Column("url", sa.Text(), nullable=True),
         sa.Column("source", sa.String(length=40), nullable=True),
+        sa.Column("source_id", sa.String(length=255), nullable=True),
         sa.Column(
-            "data", sa.dialects.postgresql.JSONB(), nullable=True
+            "data",
+            sa.dialects.postgresql.JSONB(),
+            nullable=True,
         ),
         sa.Column(
             "person_id",
@@ -56,13 +62,8 @@ def upgrade():
         sa.ForeignKeyConstraint(["project_id"], ["project.id"]),
         sa.ForeignKeyConstraint(["entity_id"], ["entity.id"]),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "name", "person_id", name="personal_asset_uc"
-        ),
     )
-    with op.batch_alter_table(
-        "personal_asset", schema=None
-    ) as batch_op:
+    with op.batch_alter_table("personal_asset", schema=None) as batch_op:
         batch_op.create_index(
             batch_op.f("ix_personal_asset_person_id"),
             ["person_id"],
@@ -78,19 +79,23 @@ def upgrade():
             ["entity_id"],
             unique=False,
         )
+        batch_op.create_index(
+            batch_op.f("ix_personal_asset_file_hash"),
+            ["file_hash"],
+            unique=False,
+        )
+        batch_op.create_index(
+            batch_op.f("ix_personal_asset_source_id"),
+            ["source_id"],
+            unique=False,
+        )
 
 
 def downgrade():
-    with op.batch_alter_table(
-        "personal_asset", schema=None
-    ) as batch_op:
-        batch_op.drop_index(
-            batch_op.f("ix_personal_asset_entity_id")
-        )
-        batch_op.drop_index(
-            batch_op.f("ix_personal_asset_project_id")
-        )
-        batch_op.drop_index(
-            batch_op.f("ix_personal_asset_person_id")
-        )
+    with op.batch_alter_table("personal_asset", schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f("ix_personal_asset_source_id"))
+        batch_op.drop_index(batch_op.f("ix_personal_asset_file_hash"))
+        batch_op.drop_index(batch_op.f("ix_personal_asset_entity_id"))
+        batch_op.drop_index(batch_op.f("ix_personal_asset_project_id"))
+        batch_op.drop_index(batch_op.f("ix_personal_asset_person_id"))
     op.drop_table("personal_asset")
