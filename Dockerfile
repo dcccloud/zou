@@ -11,7 +11,12 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000
 
 RUN set -eux; \
-    sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
+    sed -i \
+        -e 's|http://deb.debian.org/debian-security|https://mirrors.tuna.tsinghua.edu.cn/debian-security|g' \
+        -e 's|https://deb.debian.org/debian-security|https://mirrors.tuna.tsinghua.edu.cn/debian-security|g' \
+        -e 's|http://deb.debian.org/debian|https://mirrors.tuna.tsinghua.edu.cn/debian|g' \
+        -e 's|https://deb.debian.org/debian|https://mirrors.tuna.tsinghua.edu.cn/debian|g' \
+        /etc/apt/sources.list.d/debian.sources; \
     apt-get update -o Acquire::Retries=5; \
     apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
         ffmpeg \
