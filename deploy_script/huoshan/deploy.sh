@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ -f ~/.bash_profile ]; then
-    source ~/.bash_profile
-fi
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
@@ -22,24 +18,6 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
     set +a
 fi
 
-IMAGE="dcc-cloud2-cn-beijing.cr.volces.com/dcc-cloud/zou-backend:0.0.5"
-: "${HUOSHAN_CR_USERNAME:?HUOSHAN_CR_USERNAME is required}"
-: "${HUOSHAN_CR_PASSWORD:?HUOSHAN_CR_PASSWORD is required}"
-
-printf '%s' "$HUOSHAN_CR_PASSWORD" | docker login \
-    --username="$HUOSHAN_CR_USERNAME" \
-    --password-stdin \
-    dcc-cloud2-cn-beijing.cr.volces.com
-
-docker build \
-    --platform linux/amd64 \
-    -t "$IMAGE" \
-    -f "$REPO_ROOT/Dockerfile" \
-    "$REPO_ROOT"
-
-docker push "$IMAGE"
-
-# s.yaml uses FS_S3_*; local .env may define EXTERNAL_S3_* instead.
 export FS_S3_ACCESS_KEY="${FS_S3_ACCESS_KEY:-${EXTERNAL_S3_ACCESS_KEY:-}}"
 export FS_S3_SECRET_KEY="${FS_S3_SECRET_KEY:-${EXTERNAL_S3_SECRET_KEY:-}}"
 export FS_S3_REGION="${FS_S3_REGION:-${EXTERNAL_S3_REGION:-}}"

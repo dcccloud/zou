@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM docker.m.daocloud.io/library/python:3.12-slim-bookworm
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
