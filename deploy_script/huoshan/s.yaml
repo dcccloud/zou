@@ -18,10 +18,10 @@ resources:
         Description: "Zou (Kitsu) backend API"
         ExclusiveMode: false
         RequestTimeout: 600
-        MaxConcurrency: 10
+        MaxConcurrency: 32
         Runtime: native/v1
         SourceType: image
-        Source: dcc-cloud2-cn-beijing.cr.volces.com/dcc-cloud/zou-backend:0.0.5
+        Source: dcc-cloud2-cn-beijing.cr.volces.com/dcc-cloud/zou-backend:0.0.6
         MemoryMB: 8192
         Processor: cpu
         Port: 8000
@@ -38,6 +38,10 @@ resources:
             Value: "user_admin"
           - Key: DB_PASSWORD
             Value: ${env(DB_PASSWORD)}
+          - Key: DB_POOL_SIZE
+            Value: "4"
+          - Key: DB_MAX_OVERFLOW
+            Value: "4"
           - Key: KV_HOST
             Value: "redis-cnlfksdzmxmoe449a.redis.volces.com"
           - Key: KV_PORT
@@ -87,7 +91,7 @@ resources:
           - Key: USER_LIMIT
             Value: "10000"
       replicaLimit:
-        MaxInstance: 100
+        MaxInstance: 10
       triggers:
         - TriggerName: apig-trigger
           TriggerType: apig

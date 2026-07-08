@@ -8,7 +8,8 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_RETRIES=10 \
     LANG=C.UTF-8 \
     TZ=Asia/Shanghai \
-    PORT=8000
+    PORT=8000 \
+    GUNICORN_WORKERS=8
 
 RUN set -eux; \
     sed -i \

@@ -30,6 +30,7 @@ from zou.app.blueprints.concepts import blueprint as concepts_blueprint
 from zou.app.blueprints.personal_assets import (
     blueprint as personal_assets_blueprint,
 )
+from zou.app.blueprints.raven import blueprint as raven_blueprint
 
 from zou.app import config
 from zou.app.utils.plugins import load_plugins
@@ -79,6 +80,7 @@ def configure_api_routes(app):
     app.register_blueprint(search_blueprint)
     app.register_blueprint(concepts_blueprint)
     app.register_blueprint(personal_assets_blueprint)
+    app.register_blueprint(raven_blueprint)
 
     if config.ADMIN_TOKEN:
         from zou.app.blueprints.admin import blueprint as admin_blueprint

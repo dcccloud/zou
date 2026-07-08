@@ -22,7 +22,7 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
     set +a
 fi
 
-IMAGE="dcc-cloud2-cn-beijing.cr.volces.com/dcc-cloud/zou-backend:0.0.5"
+IMAGE="dcc-cloud2-cn-beijing.cr.volces.com/dcc-cloud/zou-backend:0.0.6"
 : "${HUOSHAN_CR_USERNAME:?HUOSHAN_CR_USERNAME is required}"
 : "${HUOSHAN_CR_PASSWORD:?HUOSHAN_CR_PASSWORD is required}"
 
