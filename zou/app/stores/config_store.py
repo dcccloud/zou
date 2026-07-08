@@ -17,6 +17,7 @@ try:
         username=config.KEY_VALUE_STORE.get("username"),
         password=config.KEY_VALUE_STORE["password"],
         decode_responses=True,
+        **config.KEY_VALUE_STORE_SOCKET_OPTIONS,
     )
     config_store.ping()
 except redis.RedisError as exception:

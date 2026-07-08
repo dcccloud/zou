@@ -76,3 +76,33 @@ class RavenPreviewVersionsBundleTestCase(ApiDBTestCase):
             "preview-versions-bundle",
             404,
         )
+
+    def test_batch_bundles(self):
+        comment1, preview1 = self.create_comment_with_preview(
+            "first", revision=1
+        )
+        missing_id = "00000000-0000-0000-0000-000000000000"
+
+        result = self.get(
+            "data/raven/preview-versions-bundles?entity_ids=%s,%s"
+            % (self.entity_id, missing_id)
+        )
+
+        bundles = result["bundles"]
+        self.assertEqual(len(bundles), 2)
+        self.assertEqual(bundles[0]["entity_id"], self.entity_id)
+        self.assertEqual(len(bundles[0]["versions"]), 1)
+        self.assertEqual(
+            bundles[0]["versions"][0]["preview_file"]["id"], preview1["id"]
+        )
+        self.assertEqual(bundles[1]["entity_id"], missing_id)
+        self.assertEqual(bundles[1]["versions"], [])
+
+    def test_batch_bundles_rejects_invalid_ids(self):
+        self.get(
+            "data/raven/preview-versions-bundles?entity_ids=not-a-uuid", 400
+        )
+
+    def test_batch_bundles_empty_input(self):
+        result = self.get("data/raven/preview-versions-bundles?entity_ids=")
+        self.assertEqual(result["bundles"], [])

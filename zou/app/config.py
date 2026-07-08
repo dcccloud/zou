@@ -105,6 +105,28 @@ SQLALCHEMY_ENGINE_OPTIONS = {
     "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", 3600)),
     # Reset connections when returning to pool (cleans up transaction state)
     "pool_reset_on_return": os.getenv("DB_POOL_RESET_ON_RETURN", "commit"),
+    # TCP keepalive: FaaS freezes instances between requests and their idle
+    # sockets die silently; without keepalive the next query blocks on a dead
+    # connection until the gateway gives up. Keepalive turns that into a fast
+    # failure that pool_pre_ping can recover from.
+    "connect_args": {
+        "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", 10)),
+        "keepalives": 1,
+        "keepalives_idle": int(os.getenv("DB_KEEPALIVES_IDLE", 30)),
+        "keepalives_interval": int(os.getenv("DB_KEEPALIVES_INTERVAL", 10)),
+        "keepalives_count": int(os.getenv("DB_KEEPALIVES_COUNT", 3)),
+    },
+}
+
+# Shared kwargs for every redis.StrictRedis client. Timeouts + keepalive make
+# a socket killed by an FaaS freeze fail fast and reconnect instead of
+# blocking a request (and its gevent worker) forever.
+KEY_VALUE_STORE_SOCKET_OPTIONS = {
+    "health_check_interval": int(os.getenv("KV_HEALTH_CHECK_INTERVAL", 30)),
+    "retry_on_timeout": True,
+    "socket_connect_timeout": float(os.getenv("KV_SOCKET_CONNECT_TIMEOUT", 5)),
+    "socket_keepalive": True,
+    "socket_timeout": float(os.getenv("KV_SOCKET_TIMEOUT", 10)),
 }
 
 INDEXER = {
