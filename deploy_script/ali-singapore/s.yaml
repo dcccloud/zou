@@ -20,7 +20,7 @@ resources:
       cpu: 8
       diskSize: 512
       customContainerConfig:
-        image: 'raven-sg-registry-vpc.ap-southeast-1.cr.aliyuncs.com/dcc-cloud/zou-backend:0.0.3'
+        image: 'raven-sg-registry-vpc.ap-southeast-1.cr.aliyuncs.com/dcc-cloud/zou-backend:0.0.4'
         port: 8000
       instanceConcurrency: 10
       timeout: 9000
@@ -45,6 +45,7 @@ resources:
         DOMAIN_NAME: ${vars.customDomainName}
         DOMAIN_PROTOCOL: ${vars.customDomainProtocol}
         MAIL_ENABLED: 'False'
+        MAIL_CHECK_DELIVERABILITY: 'False'
         FS_BACKEND: 's3'
         FS_S3_REGION: 'oss-ap-southeast-3'
         FS_S3_ENDPOINT: 'https://oss-ap-southeast-3.aliyuncs.com'
