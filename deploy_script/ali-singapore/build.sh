@@ -38,7 +38,7 @@ fi
 REGISTRY="${ALI_SINGAPORE_REGISTRY_PUBLIC:-${ALI_MALAYSIA_REGISTRY_PUBLIC:-raven-sg-registry.ap-southeast-1.cr.aliyuncs.com}}"
 REGISTRY_USERNAME="${ALI_SINGAPORE_REGISTRY_USERNAME:-${ALI_MALAYSIA_REGISTRY_USERNAME:-dcc_kevin@5533279936379346.onaliyun.com}}"
 REGISTRY_PASSWORD="${ALI_SINGAPORE_REGISTRY_PASSWORD:-${ALI_MALAYSIA_REGISTRY_PASSWORD:-}}"
-IMAGE="$REGISTRY/dcc-cloud/zou-backend:0.0.4"
+S_YAML="$SCRIPT_DIR/s.yaml"
 
 : "${REGISTRY_PASSWORD:?ALI_SINGAPORE_REGISTRY_PASSWORD is required}"
 
@@ -52,6 +52,21 @@ if [ "$LOGIN_ONLY" = true ]; then
     exit 0
 fi
 
+CURRENT_TAG="$(
+    grep -Eo 'dcc-cloud/zou-backend:[0-9]+\.[0-9]+\.[0-9]+' "$S_YAML" \
+        | head -1 \
+        | cut -d: -f2
+)"
+if [ -z "$CURRENT_TAG" ]; then
+    echo "Could not find dcc-cloud/zou-backend:X.Y.Z in $S_YAML" >&2
+    exit 1
+fi
+
+IFS=. read -r MAJOR MINOR PATCH <<< "$CURRENT_TAG"
+NEW_TAG="${MAJOR}.${MINOR}.$((PATCH + 1))"
+IMAGE="$REGISTRY/dcc-cloud/zou-backend:$NEW_TAG"
+echo "Bumping zou-backend ${CURRENT_TAG} -> ${NEW_TAG}"
+
 docker buildx build \
     --platform linux/amd64 \
     --provenance=false \
@@ -59,6 +74,12 @@ docker buildx build \
     --output "type=image,name=$IMAGE,push=true,oci-mediatypes=true" \
     -f "$REPO_ROOT/Dockerfile" \
     "$REPO_ROOT"
+
+TMP_YAML="$(mktemp)"
+sed "s|dcc-cloud/zou-backend:${CURRENT_TAG}|dcc-cloud/zou-backend:${NEW_TAG}|g" \
+    "$S_YAML" > "$TMP_YAML"
+mv "$TMP_YAML" "$S_YAML"
+echo "Updated $S_YAML image tag to ${NEW_TAG}"
 
 cd "$SCRIPT_DIR"
 s deploy --skip-push -y

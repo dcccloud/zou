@@ -20,7 +20,7 @@ resources:
       cpu: 8
       diskSize: 512
       customContainerConfig:
-        image: 'raven-sg-registry-vpc.ap-southeast-1.cr.aliyuncs.com/dcc-cloud/zou-backend:0.0.4'
+        image: 'raven-sg-registry-vpc.ap-southeast-1.cr.aliyuncs.com/dcc-cloud/zou-backend:0.0.8'
         port: 8000
       instanceConcurrency: 10
       timeout: 9000
@@ -63,16 +63,3 @@ resources:
         securityGroupId: sg-t4n6ksw3m3u2gp1oq7vk
         vSwitchIds:
           - vsw-t4ng3ssnuzb16nj9ck5dv
-      customDomain:
-        domainName: ${vars.customDomainName}
-        protocol: ${vars.customDomainProtocol}
-        route:
-          path: /*
-          qualifier: LATEST
-          methods:
-            - GET
-            - POST
-            - PUT
-            - DELETE
-            - HEAD
-            - OPTIONS
