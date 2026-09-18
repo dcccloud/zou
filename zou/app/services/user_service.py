@@ -324,10 +324,7 @@ def get_scenes_for_sequence(sequence_id):
     return Entity.serialize_list(query.all(), obj_type="Scene")
 
 
-def get_open_projects(name=None):
-    """
-    Get all open projects for which current user is part of the team.
-    """
+def _open_projects_query(name=None):
     query = Project.query.join(
         ProjectStatus, Project.project_status_id == ProjectStatus.id
     ).filter(build_open_project_filter())
@@ -342,6 +339,13 @@ def get_open_projects(name=None):
         )
         query = query.filter(ProjectPersonLink.person_id == current_user["id"])
 
+    return query
+
+
+def get_open_projects(name=None):
+    """
+    Get all open projects for which current user is part of the team.
+    """
     for_client = False
     vendor_departments = None
     if permissions.has_client_permissions():
@@ -352,7 +356,7 @@ def get_open_projects(name=None):
         ]
 
     return projects_service.get_projects_with_extra_data(
-        query, for_client, vendor_departments
+        _open_projects_query(name), for_client, vendor_departments
     )
 
 
@@ -360,7 +364,12 @@ def get_open_project_ids():
     """
     Get all open project ids for which current user is part of the team.
     """
-    return [project["id"] for project in get_open_projects()]
+    return [
+        str(project_id)
+        for (project_id,) in _open_projects_query()
+        .with_entities(Project.id)
+        .all()
+    ]
 
 
 def get_projects(name=None):

@@ -134,3 +134,32 @@ class UserServiceTestCase(ApiDBTestCase):
         self.assertEqual(len(notifications), 2)
         self.assertEqual(len(notifications[0]["comment_text"]), 0)
         self.assertGreater(len(notifications[1]["comment_text"]), 0)
+
+    def test_get_open_projects_includes_extra_data(self):
+        projects_service.add_metadata_descriptor(
+            self.project.id, "Asset", "Is Outdoor", "string", [], False
+        )
+        projects_service.add_metadata_descriptor(
+            self.project.id, "Asset", "Contractor", "string", [], False
+        )
+        projects = user_service.get_open_projects()
+        self.assertEqual(len(projects), 1)
+        self.assertEqual(projects[0]["id"], str(self.project_id))
+        self.assertEqual(len(projects[0]["descriptors"]), 2)
+
+    def test_get_open_project_ids(self):
+        ids = user_service.get_open_project_ids()
+        self.assertEqual(ids, [str(self.project_id)])
+
+        self.generate_fixture_user_cg_artist()
+        self.log_in_cg_artist()
+        persons_service.get_current_user = self.get_current_user_artist
+
+        ids = user_service.get_open_project_ids()
+        self.assertEqual(ids, [])
+
+        projects_service.add_team_member(
+            str(self.project.id), self.user_cg_artist["id"]
+        )
+        ids = user_service.get_open_project_ids()
+        self.assertEqual(ids, [str(self.project_id)])

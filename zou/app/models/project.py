@@ -201,20 +201,29 @@ class Project(db.Model, BaseMixin, SerializerMixin):
         "Person", secondary=ProjectPersonLink.__table__, lazy="selectin"
     )
     asset_types = db.relationship(
-        "EntityType", secondary=ProjectAssetTypeLink.__table__
+        "EntityType",
+        secondary=ProjectAssetTypeLink.__table__,
+        lazy="selectin",
     )
     task_statuses = db.relationship(
-        "TaskStatus", secondary=ProjectTaskStatusLink.__table__
+        "TaskStatus",
+        secondary=ProjectTaskStatusLink.__table__,
+        lazy="selectin",
     )
     task_types = db.relationship(
-        "TaskType", secondary=ProjectTaskTypeLink.__table__
+        "TaskType",
+        secondary=ProjectTaskTypeLink.__table__,
+        lazy="selectin",
     )
     status_automations = db.relationship(
-        "StatusAutomation", secondary=ProjectStatusAutomationLink.__table__
+        "StatusAutomation",
+        secondary=ProjectStatusAutomationLink.__table__,
+        lazy="selectin",
     )
     preview_background_files = db.relationship(
         "PreviewBackgroundFile",
         secondary=ProjectPreviewBackgroundFileLink.__table__,
+        lazy="selectin",
     )
 
     def set_team(self, person_ids):
