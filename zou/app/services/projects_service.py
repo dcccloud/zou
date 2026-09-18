@@ -47,31 +47,37 @@ def clear_project_cache(project_id):
     cache.cache.delete_memoized(open_projects)
 
 
+def _open_projects_query(name=None):
+    query = (
+        Project.query.join(
+            ProjectStatus, Project.project_status_id == ProjectStatus.id
+        )
+        .filter(ProjectStatus.name.in_(("Active", "open", "Open")))
+        .order_by(Project.name)
+    )
+    if name is not None:
+        query = query.filter(Project.name == name)
+    return query
+
+
 @cache.memoize_function(120)
 def open_projects(name=None):
     """
     Return all open projects. Allow to filter projects by name.
     """
-    query = (
-        Project.query.join(
-            ProjectStatus, Project.project_status_id == ProjectStatus.id
-        )
-        .outerjoin(MetadataDescriptor)
-        .filter(ProjectStatus.name.in_(("Active", "open", "Open")))
-        .order_by(Project.name)
-    )
-
-    if name is not None:
-        query = query.filter(Project.name == name)
-
-    return get_projects_with_extra_data(query)
+    return get_projects_with_extra_data(_open_projects_query(name))
 
 
 def open_project_ids():
     """
-    Return all open project ids. Allow to filter projects by name.
+    Return all open project ids.
     """
-    return [project["id"] for project in open_projects()]
+    return [
+        str(project_id)
+        for (project_id,) in _open_projects_query()
+        .with_entities(Project.id)
+        .all()
+    ]
 
 
 def get_projects_with_extra_data(

@@ -1,5 +1,8 @@
+from sqlalchemy import event
+
 from tests.base import ApiDBTestCase
 
+from zou.app import db
 from zou.app.models.entity import Entity
 from zou.app.models.project import Project
 from zou.app.models.metadata_descriptor import MetadataDescriptor
@@ -9,6 +12,7 @@ from zou.app.services import (
     deletion_service,
     projects_service,
 )
+from zou.app.utils import cache
 from zou.app.services.exception import (
     MetadataDescriptorNotFoundException,
     ProjectNotFoundException,
@@ -25,10 +29,75 @@ class ProjectServiceTestCase(ApiDBTestCase):
         self.generate_fixture_project()
         self.generate_fixture_project_closed()
 
+    def _count_queries(self, callback):
+        statements = []
+
+        def before_cursor_execute(
+            conn, cursor, statement, parameters, context, executemany
+        ):
+            statements.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
+        try:
+            db.session.expire_all()
+            result = callback()
+        finally:
+            event.remove(
+                db.engine, "before_cursor_execute", before_cursor_execute
+            )
+        return result, len(statements)
+
     def test_get_open_projects(self):
         projects = projects_service.open_projects()
         self.assertEqual(len(projects), 1)
         self.assertEqual("Cosmos Landromat", projects[0]["name"])
+
+    def test_open_projects_does_not_duplicate_with_descriptors(self):
+        self.generate_fixture_department()
+        self.generate_fixture_task_type()
+        self.generate_fixture_task_status()
+        projects_service.add_task_type_setting(
+            self.project.id, self.task_type.id, priority=2
+        )
+        projects_service.add_task_status_setting(
+            self.project.id, self.task_status.id
+        )
+        projects_service.add_metadata_descriptor(
+            self.project.id, "Asset", "Is Outdoor", "string", [], False
+        )
+        projects_service.add_metadata_descriptor(
+            self.project.id,
+            "Asset",
+            "Contractor",
+            "list",
+            ["contractor 1", "contractor 2"],
+            False,
+        )
+
+        projects = projects_service.open_projects()
+        self.assertEqual(len(projects), 1)
+        project = projects[0]
+        self.assertEqual(len(project["descriptors"]), 2)
+        field_names = {d["field_name"] for d in project["descriptors"]}
+        self.assertEqual(field_names, {"is_outdoor", "contractor"})
+        self.assertEqual(
+            project["task_types_priority"][str(self.task_type.id)], 2
+        )
+        self.assertIn(str(self.task_type.id), project["task_types"])
+        self.assertIn(str(self.task_status.id), project["task_statuses"])
+
+    def test_open_projects_query_count_does_not_scale_with_projects(self):
+        _, one_count = self._count_queries(projects_service.open_projects)
+
+        self.generate_fixture_project_standard()
+        self.generate_fixture_project(name="Agent 327")
+        cache.clear()
+
+        projects, many_count = self._count_queries(
+            projects_service.open_projects
+        )
+        self.assertEqual(len(projects), 3)
+        self.assertLessEqual(many_count - one_count, 3)
 
     def test_get_projects(self):
         projects = projects_service.get_projects()
@@ -391,8 +460,17 @@ class ProjectServiceTestCase(ApiDBTestCase):
 
     def test_open_project_ids(self):
         ids = projects_service.open_project_ids()
-        self.assertIn(str(self.project.id), ids)
+        self.assertEqual(ids, [str(self.project.id)])
         self.assertNotIn(str(self.project_closed.id), ids)
+
+        projects_service.add_metadata_descriptor(
+            self.project.id, "Asset", "Is Outdoor", "string", [], False
+        )
+        projects_service.add_metadata_descriptor(
+            self.project.id, "Asset", "Contractor", "string", [], False
+        )
+        ids = projects_service.open_project_ids()
+        self.assertEqual(ids, [str(self.project.id)])
 
     def test_get_metadata_descriptor_raw(self):
         descriptor = projects_service.add_metadata_descriptor(

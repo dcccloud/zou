@@ -17,6 +17,20 @@ class OpenProjectRouteTestCase(ApiDBTestCase):
 
         self.assertEqual(len(projects), 1)
         self.assertEqual(projects[0]["name"], self.project.name)
+        self.assertIn("team", projects[0])
+        self.assertIn("task_types", projects[0])
+        self.assertIn("descriptors", projects[0])
+
+    def test_open_projects_do_not_duplicate_with_descriptors(self):
+        projects_service.add_metadata_descriptor(
+            self.project_id, "Asset", "Is Outdoor", "string", [], False
+        )
+        projects_service.add_metadata_descriptor(
+            self.project_id, "Asset", "Contractor", "string", [], False
+        )
+        projects = self.get("data/projects/open/")
+        self.assertEqual(len(projects), 1)
+        self.assertEqual(len(projects[0]["descriptors"]), 2)
 
     def test_add_team_member(self):
         self.person_id = str(self.generate_fixture_person().id)
