@@ -1,9 +1,9 @@
 import copy
 
-from flask import current_app
+from flask import current_app, request
 from flask_jwt_extended import jwt_required
 
-from sqlalchemy.exc import StatementError
+from sqlalchemy.exc import ProgrammingError, StatementError
 
 from zou.app.models.entity import (
     Entity,
@@ -30,7 +30,7 @@ from zou.app.utils import date_helpers, events, permissions
 
 from zou.app.services.exception import WrongParameterException
 
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import NotFound, ServiceUnavailable
 
 from zou.app.blueprints.crud.base import BaseModelResource, BaseModelsResource
 
@@ -58,6 +58,55 @@ class EntitiesResource(BaseModelsResource, EntityEventMixin):
     def check_create_permissions(self, entity):
         user_service.check_manager_project_access(entity["project_id"])
 
+    def apply_filters(self, query, options):
+        sort_by = options.get("sort_by", "").strip() or None
+        sort_order = options.get("sort_order", "").strip() or "asc"
+        if sort_by is not None and sort_by not in (
+            "name",
+            "created_at",
+            "updated_at",
+        ):
+            raise WrongParameterException("Invalid sort_by")
+        if sort_by is not None and sort_order not in ("asc", "desc"):
+            raise WrongParameterException("Invalid sort_order")
+        search = options.get("search", "").strip()
+        if len(search) > 200:
+            raise WrongParameterException("Search is too long (max 200)")
+        query = super().apply_filters(query, options)
+        if search:
+            search = (
+                search.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_")
+            )
+            query = query.filter(
+                Entity.name.ilike("%" + search + "%", escape="\\")
+            )
+        return query
+
+    def order_entries(self, query):
+        sort_by = request.args.get("sort_by", "").strip()
+        if not sort_by:
+            return super().order_entries(query)
+        column = {
+            "name": Entity.name.collate("raven_natural_name"),
+            "created_at": Entity.created_at,
+            "updated_at": Entity.updated_at,
+        }[sort_by]
+        direction = request.args.get("sort_order", "").strip() or "asc"
+        order = column.desc() if direction == "desc" else column.asc()
+        return query.order_by(None).order_by(order, Entity.id.asc())
+
+    def paginated_entries(self, query, page, limit=None, relations=False):
+        result = super().paginated_entries(query, page, limit, relations)
+        if request.args.get("sort_by", "").strip():
+            result["sort_by"] = request.args["sort_by"].strip()
+            result["sort_order"] = (
+                request.args.get("sort_order", "").strip() or "asc"
+            )
+            result["search"] = request.args.get("search", "").strip()
+        return result
+
     @jwt_required()
     def get(self):
         """
@@ -69,6 +118,24 @@ class EntitiesResource(BaseModelsResource, EntityEventMixin):
           parameters and pagination. Includes project permission filtering
           for non-admin users.
         parameters:
+          - in: query
+            name: sort_by
+            schema:
+              type: string
+              enum: [name, created_at, updated_at]
+            description: Optional order applied before pagination. Name uses case-insensitive natural ordering.
+          - in: query
+            name: sort_order
+            schema:
+              type: string
+              enum: [asc, desc]
+              default: asc
+          - in: query
+            name: search
+            schema:
+              type: string
+              maxLength: 200
+            description: Case-insensitive literal name substring, filtered before counting and pagination.
           - in: query
             name: page
             required: false
@@ -126,7 +193,22 @@ class EntitiesResource(BaseModelsResource, EntityEventMixin):
             400:
               description: Invalid filter format or query error
         """
-        return super().get()
+        try:
+            return super().get()
+        except ProgrammingError as exception:
+            error_code = getattr(exception.orig, "sqlstate", None) or getattr(
+                exception.orig, "pgcode", None
+            )
+            if error_code == "42704" and "raven_natural_name" in str(
+                exception.orig
+            ):
+                from zou.app import db
+
+                db.session.rollback()
+                raise ServiceUnavailable(
+                    "Natural name sorting is not installed. Run zou upgrade-db before using sort_by=name."
+                ) from exception
+            raise
 
     @jwt_required()
     def post(self):
@@ -242,6 +324,12 @@ class EntitiesResource(BaseModelsResource, EntityEventMixin):
         return True
 
     def all_entries(self, query=None, relations=False):
+        if (
+            query is not None
+            and request.args.get("sort_by", "").strip()
+            and "page" not in request.args
+        ):
+            query = self.order_entries(query)
         entities = BaseModelsResource.all_entries(
             self, query=query, relations=relations
         )
