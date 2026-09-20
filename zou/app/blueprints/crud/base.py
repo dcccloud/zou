@@ -52,11 +52,7 @@ class BaseModelsResource(Resource, ArgsMixin):
         offset = (page - 1) * limit
 
         nb_pages = int(math.ceil(total / float(limit)))
-        query = query.order_by(
-            self.model.updated_at.desc(),
-            self.model.created_at.desc(),
-            self.model.id,
-        )
+        query = self.order_entries(query)
         query = query.limit(limit)
         query = query.offset(offset)
 
@@ -79,6 +75,13 @@ class BaseModelsResource(Resource, ArgsMixin):
                 "page": page,
             }
         return result
+
+    def order_entries(self, query):
+        return query.order_by(
+            self.model.updated_at.desc(),
+            self.model.created_at.desc(),
+            self.model.id,
+        )
 
     def build_filters(self, options):
         many_join_filter = []
